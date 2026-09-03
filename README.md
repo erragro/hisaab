@@ -91,7 +91,8 @@ record.
 
 ```
 Static PWA frontend — no build step (ES modules, one small CSS system,
-  a service worker). Firebase Auth (Google). Timeline-centric: one
+  a service worker). Firebase Auth — phone/OTP primary, Google secondary.
+  Timeline-centric: one
   scrolling "thread" per case with a pinned next-step card; a 3-action
   speed-dial is the whole in-case nav. Offline writes queue and sync.
   English + Hindi, adjustable text size, per-screen help.
@@ -142,6 +143,10 @@ research:
   platform", not "IDRC petition") — reachable from every screen.
 - **Multiple input modes**: camera-first evidence capture, voice input for
   chat (Web Speech API, `hi-IN` / `kn-IN` / …).
+- **Sign in with a phone number + OTP** (the auth Indian users know from UPI
+  and every govt portal); "Continue with Google" is the one-tap fallback.
+  The backend is identical either way — the uid comes from the verified
+  token, and email is treated as best-effort (phone users have none).
 - **English + Hindi**, adjustable text size, both persisted.
 - **Offline-first**: a service worker caches the shell; writes made offline
   queue in `localStorage` (idempotency-keyed) and flush on reconnect;
@@ -229,6 +234,10 @@ gcloud projects add-iam-policy-binding "$PROJECT" \
   --role="roles/datastore.user"
 firebase deploy --only firestore:rules
 
+# In the Firebase console (Authentication → Sign-in method), enable:
+#   - Phone          (primary; SMS is billed past the free tier)
+#   - Google         (secondary, one-tap)
+# then paste the web config into static/js/auth.js
 # every deploy
 make deploy
 ```

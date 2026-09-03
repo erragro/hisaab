@@ -1,7 +1,7 @@
 /* Bootstrap: auth, hash routing, topbar, FAB, offline bar, menu, PWA. */
 import { $, el, sheet, toast } from "./ui.js";
 import { t, setLang, getLang, applyStatic, LANGS } from "./i18n.js";
-import { onUser, signIn, signOut, currentUser } from "./auth.js";
+import { onUser, signInGoogle, startPhoneSignIn, resetVerifier, signOut, currentUser } from "./auth.js";
 import { api, pendingCount, onSync, flushQueue } from "./api.js";
 import { renderHome, renderCase } from "./screens.js";
 import { openAction } from "./actions.js";
@@ -16,15 +16,76 @@ document.body.dataset.step = localStorage.getItem("hisaab.step") || "s";
 applyStatic();
 
 /* ---- auth gate -------------------------------------------------- */
-const signInBtn = $("#signInBtn");
-if (signInBtn) signInBtn.onclick = () => signIn().catch((e) => toast(e.message));
-
 onUser((user) => {
   const landing = $("#landing");
   if (landing) landing.hidden = !!user;
   $("#app").hidden = !user;
   if (user) { route(); flushQueue(); }
 });
+
+const phoneForm = $("#phoneForm");
+if (phoneForm) phoneForm.addEventListener("submit", onSendCode);
+const googleBtn = $("#googleBtn");
+if (googleBtn) googleBtn.onclick = () =>
+  Promise.resolve(signInGoogle()).catch((e) => { const m = mapAuthErr(e); if (m) toast(m); });
+
+async function onSendCode(e) {
+  e.preventDefault();
+  const raw = ($("#phoneInput").value || "").replace(/\D/g, "");
+  if (raw.length !== 10) { toast(t("auth.badphone")); return; }
+  const e164 = "+91" + raw;
+  const btn = $("#sendCodeBtn");
+  btn.disabled = true; btn.textContent = t("common.saving");
+  try {
+    const conf = await startPhoneSignIn(e164);
+    openOtpSheet(e164, conf);
+  } catch (err) { toast(mapAuthErr(err) || t("auth.err")); }
+  btn.disabled = false; btn.textContent = t("auth.phone.send");
+}
+
+function openOtpSheet(e164, conf) {
+  sheet(t("auth.otp.title"), (body, close) => {
+    const otp = el("input", { class: "otp-input", inputmode: "numeric", maxlength: 6,
+      autocomplete: "one-time-code", "aria-label": "code", placeholder: "••••••" });
+    const verify = el("button", { class: "btn primary block lg", text: t("auth.otp.verify") });
+    const resend = el("button", { class: "btn ghost block", style: "margin-top:8px",
+      text: t("auth.otp.resend") });
+    const change = el("button", { class: "btn ghost block", text: t("auth.otp.change") });
+
+    async function submit() {
+      const code = otp.value.replace(/\D/g, "");
+      if (code.length !== 6) { otp.focus(); return; }
+      verify.disabled = true; verify.textContent = t("common.saving");
+      try { await conf.confirm(code); close(); }
+      catch {
+        verify.disabled = false; verify.textContent = t("auth.otp.verify");
+        toast(t("auth.otp.wrong")); otp.select();
+      }
+    }
+    verify.onclick = submit;
+    otp.addEventListener("input", () => {
+      if (otp.value.replace(/\D/g, "").length === 6) submit();
+    });
+    resend.onclick = () => { close(); resetVerifier(); $("#phoneForm").requestSubmit(); };
+    change.onclick = () => { close(); resetVerifier(); $("#phoneInput").focus(); };
+
+    body.append(
+      el("p", { class: "sheet-sub", text: t("auth.otp.sent") + " " + prettyPhone(e164) }),
+      otp, verify, resend, change,
+    );
+    setTimeout(() => otp.focus(), 120);
+  });
+}
+
+const prettyPhone = (e164) => e164.replace(/^(\+91)(\d{5})(\d{5})$/, "$1 $2 $3");
+
+function mapAuthErr(err) {
+  const c = (err && err.code) || "";
+  if (c.includes("invalid-phone")) return t("auth.badphone");
+  if (c.includes("too-many-requests")) return t("auth.toomany");
+  if (c.includes("popup-closed") || c.includes("cancelled-popup")) return "";
+  return t("auth.err");
+}
 
 /* ---- routing (hash) ------------------------------------------- */
 window.addEventListener("hashchange", route);

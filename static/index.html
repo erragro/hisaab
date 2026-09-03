@@ -22,7 +22,18 @@
   <p data-t="landing.p">A payment or deactivation dispute plays out over weeks. Hisaab keeps
      the whole thing in one place — talk it through, save your proof, see exactly
      what to do next and how long you have.</p>
-  <button id="signInBtn" class="btn primary lg block" data-t="landing.signin">Sign in with Google</button>
+
+  <form id="phoneForm" class="auth-form" autocomplete="on">
+    <div class="phone-row">
+      <span class="cc">+91</span>
+      <input id="phoneInput" type="tel" inputmode="numeric" autocomplete="tel-national"
+             maxlength="10" required data-t-ph="auth.phone.ph" placeholder="Your mobile number">
+    </div>
+    <button id="sendCodeBtn" class="btn primary lg block" data-t="auth.phone.send">Send code</button>
+  </form>
+  <button id="googleBtn" class="btn ghost block" data-t="auth.google">Continue with Google</button>
+  <div id="recaptcha-container"></div>
+
   <p class="trust"><span>🔒</span><span data-t="landing.trust">Private to you. Export or delete it any time.</span></p>
   <p class="sub" style="margin-top:22px;font-size:.8rem" data-t="landing.disclaimer">
      General information about process and drafting. Not legal advice.</p>
