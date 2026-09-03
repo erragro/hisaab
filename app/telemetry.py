@@ -144,7 +144,7 @@ def _instrument_libs():
 def _instrument_app(app):
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-        FastAPIInstrumentor.instrument_app(app, excluded_urls="healthz,readyz")
+        FastAPIInstrumentor.instrument_app(app, excluded_urls="livez,healthz,readyz")
     except Exception:  # noqa: BLE001
         pass
 

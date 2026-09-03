@@ -159,8 +159,11 @@ async def _safe_errors(request: Request, exc: Exception):
 
 
 # ---- health ---------------------------------------------------------------
+# NB: Cloud Run's front end swallows GET /healthz (returns its own 404 before
+# the request reaches the container), so the liveness route is /livez.
+@app.get("/livez")
 @app.get("/healthz")
-async def healthz():
+async def livez():
     return {"ok": True}
 
 
