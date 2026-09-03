@@ -1,0 +1,28 @@
+# gcloud run deploy --source . uses this. Keep the upload minimal and
+# secret-free. (If this file is absent, gcloud generates one from .gitignore.)
+.git/
+.gitignore
+.github/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+tests/
+node_modules/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+.env
+.env.*
+!.env.example
+*.pem
+*-service-account*.json
+serviceAccountKey.json
+.DS_Store
+.idea/
+.vscode/
