@@ -13,6 +13,13 @@
 
 ## 0. What this document covers
 
+This document is the reference for *how the system works*. Its companion,
+[`CLAUDE.md`](../CLAUDE.md), is the reference for *how to change it safely* — the
+standing security guardrails an agentic coding assistant follows when adding a
+feature or wiring in a third-party integration. This project was grown from a
+prototype with Claude Code against those instructions (the challenge's "use an
+agentic coding assistant + expand your Custom Instructions" step).
+
 This is a full technical reference for the system as it stands, plus a record
 of the work done in the engineering session that produced the current state:
 

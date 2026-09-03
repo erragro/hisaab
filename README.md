@@ -10,6 +10,11 @@ Social post hashtag: `#AccelerateAIwithCloudRun`.
 📄 **Full technical reference: [`docs/ENGINEERING.md`](docs/ENGINEERING.md)** —
 architecture, the deterministic core, the Appeal Record feature, observability,
 load-test results, deployment, and the hardening changelog.
+🤖 **Assistant instructions: [`CLAUDE.md`](CLAUDE.md)** — the security guardrails
+an agentic coding assistant follows when adding features or wiring in a new
+integration (Firebase, Firestore, Secret Manager, Gemini text + multimodal,
+telemetry). This project was grown from a prototype with Claude Code against
+these instructions.
 
 ---
 
