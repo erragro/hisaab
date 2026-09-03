@@ -7,6 +7,10 @@ Social post hashtag: `#AccelerateAIwithCloudRun`.
 
 > General information about process and drafting. **Not legal advice.**
 
+📄 **Full technical reference: [`docs/ENGINEERING.md`](docs/ENGINEERING.md)** —
+architecture, the deterministic core, the Appeal Record feature, observability,
+load-test results, deployment, and the hardening changelog.
+
 ---
 
 ## The problem
