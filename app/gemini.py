@@ -98,16 +98,23 @@ def _reset_state_for_tests() -> None:
     _client = None
 
 
+_TERMINAL_429 = ("credit", "billing", "quota exceeded", "exceeded your current quota")
+
+
 def _is_retryable(exc: Exception) -> bool:
     """Retry transient failures only. A 4xx that isn't 429 (bad request,
-    auth, quota-exhausted, safety block) will fail again — don't waste the
-    backoff on it."""
+    auth, safety block) will fail again — don't waste the backoff on it. A
+    429 is usually a per-minute rate limit (worth a retry), but a
+    depleted-credits / hard-quota 429 will not recover in 8s, so skip it."""
     try:
         from google.genai import errors as gerr
     except Exception:  # noqa: BLE001
         return True
     if isinstance(exc, gerr.ClientError):
-        return getattr(exc, "code", None) == 429
+        if getattr(exc, "code", None) != 429:
+            return False
+        msg = (str(getattr(exc, "message", "")) or str(exc)).lower()
+        return not any(t in msg for t in _TERMINAL_429)
     if isinstance(exc, gerr.ServerError):
         return True
     # timeouts, connection resets, empty-response RuntimeError, etc.

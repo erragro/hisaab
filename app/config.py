@@ -25,8 +25,11 @@ load_dotenv()  # local only; no-op in prod where there is no .env
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
 FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://localhost:8000")
 
-GEMINI_MODEL_CHAT = os.environ.get("GEMINI_MODEL_CHAT", "gemini-2.5-flash")
-GEMINI_MODEL_UTILITY = os.environ.get("GEMINI_MODEL_UTILITY", "gemini-2.5-flash-lite")
+# The "-latest" aliases always resolve to the current release, so these don't
+# break when a new Gemini flash version ships (as 2.5-flash did — it is no
+# longer available to new API-key users). Override per environment if needed.
+GEMINI_MODEL_CHAT = os.environ.get("GEMINI_MODEL_CHAT", "gemini-flash-latest")
+GEMINI_MODEL_UTILITY = os.environ.get("GEMINI_MODEL_UTILITY", "gemini-flash-lite-latest")
 
 MAX_TURNS_PER_CASE = int(os.environ.get("MAX_TURNS_PER_CASE", "20"))
 MAX_OUTPUT_TOKENS = int(os.environ.get("MAX_OUTPUT_TOKENS", "1024"))
@@ -36,10 +39,15 @@ MONTHLY_COST_CEILING_INR = float(os.environ.get("MONTHLY_COST_CEILING_INR", "40"
 
 IS_EMULATED = bool(os.environ.get("FIRESTORE_EMULATOR_HOST"))
 
-# rough public-price estimates, INR per 1M tokens, for the CostLog only
+# rough public-price estimates, INR per 1M tokens, for the CostLog and the
+# monthly-ceiling accounting only. Not billing-accurate — verify against
+# current Gemini pricing if the ceiling matters precisely.
 _PRICE_INR = {
-    "gemini-2.5-flash":       {"in": 25.0, "out": 210.0},
-    "gemini-2.5-flash-lite":  {"in": 8.0,  "out": 30.0},
+    "gemini-flash-latest":        {"in": 30.0, "out": 250.0},
+    "gemini-3.6-flash":           {"in": 30.0, "out": 250.0},
+    "gemini-flash-lite-latest":   {"in": 10.0, "out": 36.0},
+    "gemini-2.5-flash":           {"in": 25.0, "out": 210.0},
+    "gemini-2.5-flash-lite":      {"in": 8.0,  "out": 30.0},
 }
 # for an unknown / overridden model id, bill at the most expensive tier we
 # know so the monthly ceiling errs on the side of stopping early.

@@ -65,20 +65,25 @@ load:
 	   -t $(LOAD_TIME) --host http://127.0.0.1:$(PERF_PORT) ; \
 	 kill $$(cat /tmp/hisaab-perf.pid) 2>/dev/null ; rm -f /tmp/hisaab-perf.pid
 
+# Scans exactly what could be committed: git-tracked + untracked-not-ignored
+# files (so a gitignored .env holding your local key never trips it). Outside
+# a git repo it falls back to a filtered recursive scan.
 secret-scan:
-	@echo "scanning tree for key patterns…"
-	@! grep -RInE 'AIza[0-9A-Za-z_-]{20,}' \
-	  --exclude-dir=.venv --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.pytest_cache \
-	  --exclude='*.pyc' . \
-	  || (echo "FAIL: Google API key pattern found in source" && exit 1)
-	@! grep -RInE '(GEMINI_API_KEY|GOOGLE_API_KEY|api_key)[ ]*[:=][ ]*["'"'"'][^"'"'"']{20,}' \
-	  --include='*.py' --include='*.js' --include='*.ts' --include='*.json' --include='*.yaml' \
-	  --include='*.yml' --include='*.sh' --include='*.toml' --include='Dockerfile' --include='Makefile' \
-	  --exclude=.env.example --exclude-dir=.venv --exclude-dir=.git --exclude-dir=node_modules . \
-	  || (echo "FAIL: hardcoded API key literal" && exit 1)
-	@if git rev-parse --git-dir >/dev/null 2>&1; then \
+	@echo "scanning committable files for key patterns…"
+	@if git rev-parse --git-dir >/dev/null 2>&1 ; then \
+	  git ls-files -z --cached --others --exclude-standard \
+	    | xargs -0 grep -lIE 'AIza[0-9A-Za-z_-]{20,}' 2>/dev/null \
+	    && { echo "FAIL: Google API key pattern in a committable file"; exit 1; } || true ; \
+	  git ls-files -z --cached --others --exclude-standard ':!.env.example' \
+	    | xargs -0 grep -lIE '(GEMINI_API_KEY|GOOGLE_API_KEY|api_key)[ ]*[:=][ ]*["'"'"'][^"'"'"']{20,}' 2>/dev/null \
+	    && { echo "FAIL: hardcoded API key literal"; exit 1; } || true ; \
 	  git ls-files -- '*.env' 'serviceAccountKey.json' '*-service-account*.json' 2>/dev/null | grep -q . \
-	    && (echo "FAIL: a secret file is tracked by git" && exit 1) || true ; \
+	    && { echo "FAIL: a secret file is tracked by git"; exit 1; } || true ; \
+	else \
+	  grep -RlIE 'AIza[0-9A-Za-z_-]{20,}' --exclude-dir=.venv --exclude-dir=.git \
+	    --exclude-dir=node_modules --exclude-dir=.pytest_cache --exclude='*.pyc' \
+	    --exclude='.env' --exclude='.env.*' . \
+	    && { echo "FAIL: Google API key pattern found in source"; exit 1; } || true ; \
 	fi
 	@echo "secret-scan clean"
 

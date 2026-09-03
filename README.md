@@ -77,7 +77,7 @@ record.
    — the deactivation message, an in-app earnings screen, a ratings screen,
    a support chat, a payslip. Files are stored inline in the user's private
    Firestore subtree (≤ 900 KB each).
-2. **Gemini reads it; Python keeps it.** `gemini-2.5-flash` (multimodal)
+2. **Gemini reads it; Python keeps it.** `gemini-flash-lite-latest` (multimodal)
    transcribes the date shown, the rupee figure and its period, the stated
    reason, order/ticket IDs, a rating. The model never sets a date it can't
    actually read; Python validates every field before it's stored.

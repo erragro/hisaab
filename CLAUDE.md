@@ -104,9 +104,15 @@ between the model and the decision, and unit-test it.
   another module needs the model, it calls `gemini.generate()`.
 - `generate()` never raises to the caller. Every call path has: a 20s
   hard timeout (`HttpOptions(timeout=20_000)`), bounded retries **for
-  transient failures only** (`_is_retryable` — a non-429 `ClientError` is
-  terminal), a circuit breaker, and a caller-supplied `fallback_text`
-  template. On total failure it returns `ok=False` + the template.
+  transient failures only** (`_is_retryable` — a non-429 `ClientError`,
+  and a depleted-credits / hard-quota 429, are terminal; a plain
+  rate-limit 429 is retried), a circuit breaker, and a caller-supplied
+  `fallback_text` template. On total failure it returns `ok=False` + the
+  template.
+- Model ids are the **`-latest` aliases** (`gemini-flash-latest`,
+  `gemini-flash-lite-latest`) so a version retirement doesn't break the
+  app — `gemini-2.5-flash` stopped serving new API keys. If you pin an
+  explicit version, add it to `config._PRICE_INR`.
 - Every call emits a `CostLog` log line and the `hisaab.gemini.*`
   telemetry. If you add a call site, record its cost via
   `limits.record(uid, res.est_inr)` and gate it with

@@ -79,7 +79,7 @@ gating decision is computed by pure, unit-tested Python in `app/core/`.
 |---|---|---|
 | API | FastAPI / Starlette on Uvicorn | fastapi 0.115.6, uvicorn 0.34.0 |
 | Validation | Pydantic v2 | 2.10.4 |
-| Model SDK | `google-genai` | 0.8.0 (`gemini-2.5-flash`, `gemini-2.5-flash-lite`) |
+| Model SDK | `google-genai` | 0.8.0 (`gemini-flash-latest`, `gemini-flash-lite-latest`) |
 | Data | `google-cloud-firestore` (Admin SDK) | 2.19.0 |
 | Auth | `firebase-admin` | 6.6.0 |
 | Secrets | `google-cloud-secret-manager` | 2.21.1 |
@@ -339,7 +339,7 @@ deterministic path.
 | Concern | Implementation |
 |---|---|
 | **Timeout** | `genai.Client(http_options=HttpOptions(timeout=20_000))` — 20 s hard cap (was previously a dead `_TIMEOUT_S` constant) |
-| **Retries** | up to 3 attempts, backoff `min(2**attempt + rand, 8)` s — **only for transient failures**: `_is_retryable` returns `False` for a `ClientError` that isn't a 429 (bad request, auth, safety block), so those fail fast |
+| **Retries** | up to 3 attempts, backoff `min(2**attempt + rand, 8)` s — **only for transient failures**: `_is_retryable` returns `False` for a non-429 `ClientError` (bad request, auth, safety block) **and** for a depleted-credits / hard-quota 429; a plain rate-limit 429 is retried |
 | **Circuit breaker** | 5 consecutive failures → breaker open for 30 s; `generate()` returns the fallback immediately while open. State guarded by a `threading.Lock` |
 | **Fallback** | caller passes `fallback_text` (a filled template); `parse_json` returns `None` on any failure so the caller never falls back to raw text |
 | **Multimodal** | `generate(media=[(bytes, mime), …])` → `_with_media` builds native `types.Content` with `Part.from_bytes`; used for evidence extraction |
@@ -419,7 +419,7 @@ uploads what they grabbed before lockout. `POST /api/cases/{id}/evidence`:
    pdf), and that `data_b64` decodes; the route re-checks the decoded size
    against `EVIDENCE_MAX_BYTES` (≈ 900 KB) and `EVIDENCE_MAX_ITEMS` (40).
 2. `gemini.generate(media=[(raw, mime)], want_json=True)` with `EVIDENCE_SYSTEM`
-   — `gemini-2.5-flash-lite` transcribes: the date visible *in the image*, the
+   — `gemini-flash-lite-latest` transcribes: the date visible *in the image*, the
    rupee figure and its period, the platform's stated reason, order/ticket IDs,
    a rating value, a ≤ 25-word summary.
 3. `_clean_extracted` validates every field — **a date that doesn't parse is
@@ -718,8 +718,8 @@ file in production).
 | `EVIDENCE_SIGNING_KEY` | — | HMAC key for the appeal-record manifest; from Secret Manager `evidence-signing-key`; optional (manifest still emitted unsigned) |
 | `FRONTEND_ORIGIN` | `http://localhost:8000` | CORS allow-origin; deploy pins it to the service URL |
 | `FIRESTORE_EMULATOR_HOST` / `FIREBASE_AUTH_EMULATOR_HOST` | — | local emulators |
-| `GEMINI_MODEL_CHAT` | `gemini-2.5-flash` | chat + draft model |
-| `GEMINI_MODEL_UTILITY` | `gemini-2.5-flash-lite` | auto-summary + evidence extraction |
+| `GEMINI_MODEL_CHAT` | `gemini-flash-latest` | chat + draft model |
+| `GEMINI_MODEL_UTILITY` | `gemini-flash-lite-latest` | auto-summary + evidence extraction |
 | `MAX_TURNS_PER_CASE` | `20` | × 2 = message cap per case |
 | `MAX_OUTPUT_TOKENS` | `1024` | per-call output cap |
 | `RATE_LIMIT_PER_5MIN` / `RATE_LIMIT_PER_DAY` | `20` / `60` | burst limiter (in-memory) **and** the Firestore daily model-call cap |
