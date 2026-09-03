@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#125c43">
+<title>Hisaab — UI demo (mock data)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<div id="offlineBar" class="offline-bar" hidden></div>
+<main id="landing" hidden></main>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <button id="backBtn" class="back" hidden aria-label="Back">←</button>
+    <span class="brand" id="topTitle">Hisaab <span class="dev">हिसाब</span></span>
+    <span class="sp"></span>
+    <button id="helpBtn" class="iconbtn" aria-label="Help">?</button>
+    <button id="menuBtn" class="iconbtn" aria-label="Menu">☰</button>
+  </header>
+  <div id="view"></div>
+  <div id="fabWrap" class="fab-wrap" hidden>
+    <div class="fab-inner">
+      <div id="fabActions" class="fab-actions closed">
+        <button class="btn" data-act="evidence">📷 <span data-t="fab.evidence">Add proof</span></button>
+        <button class="btn" data-act="chat">💬 <span data-t="fab.chat">Ask a question</span></button>
+        <button class="btn" data-act="draft">📄 <span data-t="fab.draft">Make a document</span></button>
+        <button class="btn" data-act="deadlines">📅 <span data-t="fab.deadlines">Add dates</span></button>
+      </div>
+      <button id="fab" class="fab" aria-label="Actions">+</button>
+    </div>
+  </div>
+</div>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+/* ---- mock user + API so the UI renders with no backend ---- */
+window.__mockUser = { email: "demo@worker.in", uid: "demo" };
+
+const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+const C1 = {
+  case: { id: "c1", title: "Uber blocked my ID after a customer complaint",
+    issue_type: "deactivation", platform: "Uber", amount_claimed_inr: null,
+    incident_date: "2026-08-28", createdAt: "2026-08-29T09:00:00Z",
+    summary: "ID deactivated on 28 Aug citing a customer complaint. No details given. Support chat got a template reply. Need to appeal to Uber's committee before the window closes." },
+  messages: [
+    { role: "user", text: "My Uber driver ID got blocked yesterday. It just says 'account under review'.", ts: "2026-08-29T09:05:00Z" },
+    { role: "model", text: "That is a deactivation. Under the Karnataka rules the platform must give you a reason and you can appeal to their Internal Dispute Resolution Committee. You have 7 working days from the block to file that appeal — so this is time-sensitive. First: do you have a screenshot of the block message and your last earnings screen?", ts: "2026-08-29T09:05:30Z" },
+    { role: "user", text: "yes i took a photo of the message and my weekly earnings", ts: "2026-08-29T09:07:00Z" },
+    { role: "model", text: "Good. Add both under 'Add proof' so they go into your record with a timestamp. Then use 'Make a document' → 'Complaint to the platform' and I will help you word the appeal.", ts: "2026-08-29T09:07:40Z" },
+  ],
+  drafts: [
+    { id: "d1", kind: "platform_grievance", createdAt: "2026-08-30T10:00:00Z",
+      body: "To: Uber India Systems Pvt Ltd, Grievance / IDRC\nFrom: [Your name], Partner ID UBER-4471902\n\nOn 28/08/2026 my driver account was deactivated with the message \"account under review\". No specific reason, evidence or prior notice was given.\n\nI expected to continue working; instead I have earned Rs 0 since 28/08/2026 against a recent baseline of about Rs 6,850 per week (two earnings statements attached).\n\nI request that you (a) share the specific reason and evidence for the deactivation, (b) reactivate my account, and (c) credit the earnings lost during the review period.\n\nThis is submitted within 7 working days of the deactivation as required under the Karnataka Platform-Based Gig Workers Rules, 2025.\n\n[Signature]\n[Your name] · [date]",
+      readiness: { kind: "platform_grievance", ready: false, score: 0.667,
+        required_passed: 3, required_total: 4,
+        missing: ["Your name and address"],
+        checks: [
+          { id: "worker_id", label: "Your partner / worker ID", ok: true, note: "" },
+          { id: "platform", label: "Which platform", ok: true, note: "" },
+          { id: "refs", label: "Order / trip IDs or the exact dates involved", ok: true, note: "" },
+          { id: "amount", label: "The exact amount in dispute", ok: true, note: "" },
+          { id: "expected_vs_got", label: "What you expected vs what you received", ok: true, note: "" },
+          { id: "ask", label: "A clear ask (pay X / reactivate / explain the deduction)", ok: true, note: "" },
+        ] } },
+  ],
+  deadlines: [
+    { kind: "idrc_appeal", label: "Last day to appeal the deactivation to the platform's IDRC",
+      due_date: "2026-09-08", from_date: "2026-08-28",
+      basis: "termination 2026-08-28 + 7 working days (Karnataka Platform-Based Gig Workers Rules, 2025)",
+      days_remaining: 5, working_days_remaining: 3, passed: false },
+    { kind: "consumer_limitation", label: "Last date to file a consumer complaint",
+      due_date: "2028-08-28", from_date: "2026-08-28",
+      basis: "cause of action 2026-08-28 + 2 years (Consumer Protection Act, 2019, s.69)",
+      days_remaining: 725, working_days_remaining: null, passed: false },
+    { kind: "wage_limitation", label: "Approximate outer limit to pursue the unpaid amount",
+      due_date: "2029-08-28", from_date: "2026-08-28",
+      basis: "cause of action 2026-08-28 + 3 years (general limitation for money claims)",
+      days_remaining: 1821, working_days_remaining: null, passed: false },
+  ],
+  evidence: [
+    { id: "e1", seq: 1, kind: "deactivation_notice", filename: "block-msg.jpg", mime: "image/jpeg",
+      size: 88000, sha256: "9f2c1a7b4e5d6c8a1122334455667788990011223344556677889900aabbccdd",
+      captured_at: "2026-08-29T08:58:00Z", prev_hash: "GENESIS",
+      chain_hash: "a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff001",
+      extracted: { observed_date: "2026-08-28", amount_inr: null, period_days: null,
+        reason: "account under review following a customer complaint", refs: ["TRIP-88213", "TKT-556012"],
+        rating: "4.71", summary: "In-app message: account deactivated, 'under review', no timeline given." } },
+    { id: "e2", seq: 2, kind: "earnings_screen", filename: "earnings-wk34.jpg", mime: "image/jpeg",
+      size: 121000, sha256: "1122334455667788990011223344556677889900aabbccddeeff00112233abcd",
+      captured_at: "2026-08-29T08:59:30Z",
+      prev_hash: "a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff001",
+      chain_hash: "ff00eeddccbbaa998877665544332211009988776655443322110099aabbccdd",
+      extracted: { observed_date: "2026-08-24", amount_inr: 7020, period_days: 7,
+        reason: "", refs: [], rating: "", summary: "Weekly earnings summary: Rs 7,020 for 41 trips." } },
+    { id: "e3", seq: 3, kind: "earnings_screen", filename: "earnings-wk33.jpg", mime: "image/jpeg",
+      size: 118000, sha256: "aabbccddeeff00112233445566778899aabbccddeeff0011223344556677abcd",
+      captured_at: "2026-08-29T09:00:10Z",
+      prev_hash: "ff00eeddccbbaa998877665544332211009988776655443322110099aabbccdd",
+      chain_hash: "0011223344556677889900aabbccddeeff00112233445566778899aabbccdd22",
+      extracted: { observed_date: "2026-08-17", amount_inr: 6680, period_days: 7,
+        reason: "", refs: [], rating: "", summary: "Weekly earnings summary: Rs 6,680 for 39 trips." } },
+  ],
+  lost_wages: { daily_rate_inr: 979, days_offline: 7, estimate_inr: 6853, samples_used: 2,
+    basis: "baseline Rs 979/day (from 2 earnings records: Rs 13,700 over 14 days) x 7 days offline (2026-08-28 to 2026-09-03, both inclusive)" },
+};
+
+const C2 = {
+  case: { id: "c2", title: "Zomato withheld ₹2,400 March incentive", issue_type: "incentive_dispute",
+    platform: "Zomato", amount_claimed_inr: 2400, incident_date: "2026-03-10",
+    createdAt: "2026-03-14T09:00:00Z", summary: "March rain-week incentive of ₹2,400 not credited. Raised in-app twice, closed without payment." },
+  messages: [], drafts: [], evidence: [], lost_wages: null,
+  deadlines: [
+    { kind: "consumer_limitation", label: "Last date to file a consumer complaint", due_date: "2028-03-10",
+      from_date: "2026-03-10", basis: "cause of action 2026-03-10 + 2 years (Consumer Protection Act, 2019, s.69)",
+      days_remaining: 553, working_days_remaining: null, passed: false },
+  ],
+};
+
+const DB = { c1: C1, c2: C2 };
+
+window.__mockApi = async (path, { method } = {}) => {
+  await new Promise((r) => setTimeout(r, 120));
+  if (path === "/cases")
+    return { cases: [
+      { id: "c1", ...C1.case }, { id: "c2", ...C2.case },
+    ] };
+  let m;
+  if ((m = path.match(/^\/cases\/(c\d)$/))) return structuredClone(DB[m[1]]);
+  if ((m = path.match(/^\/cases\/(c\d)\/evidence\/(\w+)$/))) {
+    const e = DB[m[1]].evidence.find((x) => x.id === m[2]);
+    return { evidence: { ...e, data_b64: PNG } };
+  }
+  if ((m = path.match(/^\/cases\/(c\d)\/appeal-record$/))) {
+    const ev = DB[m[1]].evidence;
+    return { version: 1, head: ev.at(-1)?.chain_hash || "GENESIS",
+      entries: ev.map((e) => ({ seq: e.seq, kind: e.kind, filename: e.filename, sha256: e.sha256, captured_at: e.captured_at, prev_hash: e.prev_hash, chain_hash: e.chain_hash })),
+      verification: { ok: true, length: ev.length, broken_at: null, reason: "" },
+      signature: { alg: "HMAC-SHA256", value: "3f9c...demo...a20b" } };
+  }
+  if (method === "POST" || method === "DELETE") { return { ok: true, id: "new" }; }
+  return {};
+};
+</script>
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>

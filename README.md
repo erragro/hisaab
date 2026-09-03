@@ -90,7 +90,11 @@ record.
 ## Architecture
 
 ```
-Static frontend (Firebase Auth, Google sign-in)
+Static PWA frontend — no build step (ES modules, one small CSS system,
+  a service worker). Firebase Auth (Google). Timeline-centric: one
+  scrolling "thread" per case with a pinned next-step card; a 3-action
+  speed-dial is the whole in-case nav. Offline writes queue and sync.
+  English + Hindi, adjustable text size, per-screen help.
         │  Authorization: Bearer <Firebase ID token>
         ▼
 Cloud Run service — FastAPI (app/main.py)   [handlers are sync -> threadpool;
@@ -115,6 +119,36 @@ Cloud Run service — FastAPI (app/main.py)   [handlers are sync -> threadpool;
 documents, narrates the numbers, and transcribes an uploaded screenshot. It
 never produces a score, a deadline, a lost-wages figure, or the "ready to
 send" verdict.
+
+---
+
+## Frontend design
+
+The UI is built against the **SARAL** guidelines for low-literate smartphone
+users (Srivastava et al., CSCW 2021) and access-to-justice legal-design
+research:
+
+- **One thread per case.** A dispute plays out over weeks; the case screen is
+  a single vertical timeline that braids together the incident, every piece
+  of proof (with what the model read off it), the conversation, the drafts,
+  and the deadlines as future events.
+- **A pinned "next step" card**, filled by the deterministic engine, always
+  says the one thing to do and how long is left — as a big number
+  (`3` working days), colour-coded red / amber / green. Numbers and dates are
+  what low-literate users trust, so the UI leads with them.
+- **Flat navigation.** No menus-within-menus: a 3-action speed-dial (📷 add
+  proof · 💬 ask · 📄 make a document) and bottom sheets, one task per sheet.
+- **Plain words in the UI, the legal term in Help** ("Complaint to the
+  platform", not "IDRC petition") — reachable from every screen.
+- **Multiple input modes**: camera-first evidence capture, voice input for
+  chat (Web Speech API, `hi-IN` / `kn-IN` / …).
+- **English + Hindi**, adjustable text size, both persisted.
+- **Offline-first**: a service worker caches the shell; writes made offline
+  queue in `localStorage` (idempotency-keyed) and flush on reconnect;
+  installable as a PWA for a weak-connection phone.
+
+No framework, no bundler — it still deploys as `COPY static/`. `static/demo.html`
+renders the whole UI against mock data with no backend.
 
 ---
 
@@ -160,7 +194,7 @@ make install
 cp .env.example .env         # add a Gemini key for local dev only
 make emulators               # terminal 1: Firebase Auth + Firestore emulators
 make run                     # terminal 2: the app on :8000
-# fill firebaseConfig in static/app.js from your Firebase console
+# fill firebaseConfig in static/js/auth.js from your Firebase console
 ```
 
 ## Test (the deploy gate)

@@ -2,153 +2,61 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hisaab — your case, organised</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="theme-color" content="#125c43">
+<title>Hisaab — your case, on one thread</title>
 <meta name="description" content="A private case journal for gig-worker payment and deactivation disputes.">
-<link rel="stylesheet" href="/style.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/app.css">
 </head>
 <body>
 
-<header>
-  <div class="brand">Hisaab <span>हिसाब</span></div>
-  <div id="whoami" hidden>
-    <span id="email"></span>
-    <button id="menuBtn" class="ghost" aria-haspopup="true">⋯</button>
-    <div id="menu" hidden role="menu">
-      <button id="exportBtn" role="menuitem">Download my data</button>
-      <button id="deleteBtn" role="menuitem" class="danger">Delete account</button>
-      <button id="signOutBtn" role="menuitem">Sign out</button>
+<div id="offlineBar" class="offline-bar" hidden>You're offline — changes are saved and will sync</div>
+
+<!-- signed out ------------------------------------------------------ -->
+<main id="landing">
+  <div class="brand" style="font-size:1.3rem">Hisaab <span class="dev">हिसाब</span></div>
+  <h1 data-t="landing.h1">Your case, on one thread.</h1>
+  <p data-t="landing.p">A payment or deactivation dispute plays out over weeks. Hisaab keeps
+     the whole thing in one place — talk it through, save your proof, see exactly
+     what to do next and how long you have.</p>
+  <button id="signInBtn" class="btn primary lg block" data-t="landing.signin">Sign in with Google</button>
+  <p class="trust"><span>🔒</span><span data-t="landing.trust">Private to you. Export or delete it any time.</span></p>
+  <p class="sub" style="margin-top:22px;font-size:.8rem" data-t="landing.disclaimer">
+     General information about process and drafting. Not legal advice.</p>
+</main>
+
+<!-- signed in ------------------------------------------------------- -->
+<div id="app" hidden>
+  <header class="topbar">
+    <button id="backBtn" class="back" hidden aria-label="Back">←</button>
+    <span class="brand" id="topTitle">Hisaab <span class="dev">हिसाब</span></span>
+    <span class="sp"></span>
+    <button id="helpBtn" class="iconbtn" aria-label="Help">?</button>
+    <button id="menuBtn" class="iconbtn" aria-label="Menu">☰</button>
+  </header>
+
+  <div id="view"><!-- screens render here --></div>
+
+  <!-- speed-dial: the entire in-case navigation -->
+  <div id="fabWrap" class="fab-wrap" hidden>
+    <div class="fab-inner">
+      <div id="fabActions" class="fab-actions closed">
+        <button class="btn" data-act="evidence">📷 <span data-t="fab.evidence">Add proof</span></button>
+        <button class="btn" data-act="chat">💬 <span data-t="fab.chat">Ask a question</span></button>
+        <button class="btn" data-act="draft">📄 <span data-t="fab.draft">Make a document</span></button>
+        <button class="btn" data-act="deadlines">📅 <span data-t="fab.deadlines">Add dates</span></button>
+      </div>
+      <button id="fab" class="fab" aria-label="Actions">+</button>
     </div>
   </div>
-</header>
+</div>
 
-<!-- signed out -->
-<main id="landing">
-  <h1>Your case, organised. Your side, ready to send.</h1>
-  <p>A gig worker's payment or deactivation dispute plays out over weeks —
-     app grievance, then the state portal, then a consumer or labour route.
-     Hisaab keeps the whole thing in one place: talk it through, get the
-     notices drafted, track the deadlines. Private to you.</p>
-  <button id="signInBtn" class="primary">Sign in with Google</button>
-  <p class="fine">General information, not legal advice. Your data is stored
-     privately and you can export or delete it any time.</p>
-</main>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
 
-<!-- signed in -->
-<main id="app" hidden>
-  <section id="caseListPane">
-    <div class="pane-head">
-      <h2>Your cases</h2>
-      <button id="newCaseBtn" class="primary sm">New case</button>
-    </div>
-    <ul id="caseList"></ul>
-  </section>
-
-  <section id="casePane" hidden>
-    <button id="backBtn" class="ghost sm">← cases</button>
-    <h2 id="caseTitle"></h2>
-    <p id="caseSummary" class="summary"></p>
-
-    <div class="tabs">
-      <button data-tab="chat" class="tab active">Talk it through</button>
-      <button data-tab="evidence" class="tab">Evidence</button>
-      <button data-tab="deadlines" class="tab">Deadlines</button>
-      <button data-tab="drafts" class="tab">Drafts</button>
-    </div>
-
-    <div id="tab-chat" class="tabpane">
-      <div id="messages"></div>
-      <form id="chatForm">
-        <textarea id="chatInput" rows="2" placeholder="Describe what happened, or ask what to do next…" required></textarea>
-        <button class="primary sm">Send</button>
-      </form>
-    </div>
-
-    <div id="tab-evidence" class="tabpane" hidden>
-      <p class="fine" style="margin-top:0">Save what you grabbed before losing app
-        access — the deactivation message, an earnings screen, a support chat, a
-        payslip. Each upload is timestamped and hash-linked into a tamper-evident
-        record you can hand to the IDRC or a paralegal.</p>
-      <form id="evidenceForm" class="grid">
-        <label>What is this
-          <select name="kind">
-            <option value="deactivation_notice">Deactivation / block message</option>
-            <option value="earnings_screen">In-app earnings screen</option>
-            <option value="ratings_screen">Ratings / performance screen</option>
-            <option value="support_chat">Support chat / email</option>
-            <option value="payslip">Payslip / payout statement</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-        <label>Date on it (optional) <input type="date" name="captured_hint"></label>
-        <label style="grid-column:1/-1">File (PNG/JPG/WebP/PDF, under 900&nbsp;KB)
-          <input type="file" name="file" accept="image/png,image/jpeg,image/webp,application/pdf" required></label>
-        <button class="primary sm">Add to record</button>
-      </form>
-      <div id="evidenceChain" class="fine"></div>
-      <div id="lostWages"></div>
-      <div id="evidenceList"></div>
-    </div>
-
-    <div id="tab-deadlines" class="tabpane" hidden>
-      <form id="deadlineForm" class="grid">
-        <label>Notice sent on <input type="date" name="notice_sent"></label>
-        <label>Days given <input type="number" name="notice_days" value="15" min="1" max="90"></label>
-        <label>Platform grievance filed <input type="date" name="grievance_filed"></label>
-        <label>Platform's promised days <input type="number" name="platform_sla_days" min="1" max="180"></label>
-        <button class="primary sm">Recompute</button>
-      </form>
-      <ul id="deadlineList"></ul>
-    </div>
-
-    <div id="tab-drafts" class="tabpane" hidden>
-      <form id="draftForm" class="grid">
-        <label>Document
-          <select name="kind">
-            <option value="legal_notice">Legal notice</option>
-            <option value="platform_grievance">Platform grievance</option>
-            <option value="consumer_complaint">Consumer complaint</option>
-            <option value="labour_complaint">Labour complaint</option>
-          </select>
-        </label>
-        <label>Your name <input name="sender_name" required></label>
-        <label>Your address <input name="sender_address"></label>
-        <label>Your worker / partner ID <input name="sender_worker_id"></label>
-        <label>Recipient name <input name="recipient_name" required></label>
-        <label>Recipient address <input name="recipient_address"></label>
-        <button class="primary sm">Generate draft</button>
-      </form>
-      <div id="draftOut"></div>
-    </div>
-  </section>
-</main>
-
-<!-- new case dialog -->
-<dialog id="newCaseDialog">
-  <form method="dialog" id="newCaseForm">
-    <h3>New case</h3>
-    <label>Short title <input name="title" required minlength="3" maxlength="140"
-       placeholder="Zomato withheld ₹2,400 incentive — March"></label>
-    <label>Issue
-      <select name="issue_type">
-        <option value="unpaid_wages">Unpaid wages / earnings</option>
-        <option value="wrong_deduction">Wrong deduction</option>
-        <option value="deactivation">Deactivation / blocked ID</option>
-        <option value="incentive_dispute">Incentive not paid</option>
-        <option value="accident_claim">Accident / injury claim</option>
-        <option value="other">Other</option>
-      </select>
-    </label>
-    <label>Platform <input name="platform" required placeholder="Zomato, Uber, Urban Company…"></label>
-    <label>Amount involved (₹) <input name="amount_claimed_inr" type="number" min="0"></label>
-    <label>When did it happen <input name="incident_date" type="date"></label>
-    <menu>
-      <button value="cancel" class="ghost">Cancel</button>
-      <button value="ok" class="primary">Create</button>
-    </menu>
-  </form>
-</dialog>
-
-<script type="module" src="/app.js"></script>
+<script type="module" src="/js/main.js"></script>
 </body>
 </html>
