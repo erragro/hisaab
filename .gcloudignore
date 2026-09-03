@@ -26,3 +26,8 @@ serviceAccountKey.json
 .DS_Store
 .idea/
 .vscode/
+
+# load-test + observability tooling (not part of the service)
+perf/
+otel/
+requirements-dev.txt

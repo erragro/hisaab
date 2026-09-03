@@ -9,7 +9,14 @@ SA := $(SERVICE)-run@$(PROJECT).iam.gserviceaccount.com
 # GEMINI_API_KEY is required; EVIDENCE_SIGNING_KEY is added only if the secret exists
 SECRETS := GEMINI_API_KEY=gemini-api-key:latest$(shell gcloud secrets describe evidence-signing-key >/dev/null 2>&1 && echo ',EVIDENCE_SIGNING_KEY=evidence-signing-key:latest')
 
-.PHONY: venv install test emulators run rules deploy gate secret-scan
+OTEL_ENDPOINT ?= http://localhost:4318
+PERF_PORT ?= 8800
+LOAD_USERS ?= 50
+LOAD_TIME ?= 60s
+GEMINI_FAKE_LATENCY_MS ?= 250
+
+.PHONY: venv install install-dev test test-perf emulators run rules deploy gate \
+        secret-scan otel-up otel-down otel-logs perf-serve load
 
 venv:
 	python3 -m venv .venv
@@ -17,12 +24,46 @@ venv:
 install: venv
 	$(PIP) install -q -r requirements.txt
 
+install-dev: install
+	$(PIP) install -q -r requirements-dev.txt
+
 # --- the lab gate: everything below deploy depends on this ---
 gate: test secret-scan
 	@echo "GATE PASSED"
 
 test:
 	$(PY) -m pytest -q
+
+# timing-sensitive concurrency / throughput tests (excluded from `test`)
+test-perf:
+	$(PY) -m pytest -q -o addopts="" -m perf -s tests/test_perf.py
+
+# --- observability + load testing -------------------------------------------
+otel-up:
+	cd otel && docker compose up -d
+	@echo "Jaeger  http://localhost:16686   Grafana http://localhost:3000   Prometheus http://localhost:9090"
+
+otel-down:
+	cd otel && docker compose down
+
+otel-logs:
+	cd otel && docker compose logs -f otel-collector
+
+# run the real app with in-memory fakes + OTel on (Ctrl-C to stop)
+perf-serve:
+	HISAAB_OTEL=1 OTEL_EXPORTER_OTLP_ENDPOINT=$(OTEL_ENDPOINT) \
+	OTEL_SERVICE_NAME=hisaab GEMINI_FAKE_LATENCY_MS=$(GEMINI_FAKE_LATENCY_MS) \
+	PORT=$(PERF_PORT) $(PY) -m perf.serve_fake
+
+# headless load test: starts the perf server, runs Locust, tears down
+load:
+	@HISAAB_OTEL=1 OTEL_EXPORTER_OTLP_ENDPOINT=$(OTEL_ENDPOINT) OTEL_SERVICE_NAME=hisaab \
+	 GEMINI_FAKE_LATENCY_MS=$(GEMINI_FAKE_LATENCY_MS) PORT=$(PERF_PORT) \
+	 $(PY) -m perf.serve_fake & echo $$! > /tmp/hisaab-perf.pid ; \
+	 sleep 3 ; \
+	 .venv/bin/locust -f perf/locustfile.py --headless -u $(LOAD_USERS) -r 10 \
+	   -t $(LOAD_TIME) --host http://127.0.0.1:$(PERF_PORT) ; \
+	 kill $$(cat /tmp/hisaab-perf.pid) 2>/dev/null ; rm -f /tmp/hisaab-perf.pid
 
 secret-scan:
 	@echo "scanning tree for key patterns…"

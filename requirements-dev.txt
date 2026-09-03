@@ -1,0 +1,4 @@
+# Dev / load-testing only — NOT installed in the container.
+-r requirements.txt
+
+locust==2.46.4

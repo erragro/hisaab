@@ -27,6 +27,7 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
+from app import telemetry
 from app.config import (
     MAX_OUTPUT_TOKENS,
     est_cost_inr,
@@ -147,6 +148,33 @@ def generate(
     max_output_tokens: Optional[int] = None,
     media: Optional[list] = None,   # [(bytes, mime_type)] for multimodal calls
 ) -> GeminiResult:
+    with telemetry.span("gemini.generate", {
+        "gemini.model": model, "gemini.want_json": want_json,
+        "gemini.multimodal": bool(media), "trace_id": trace_id,
+    }) as _s:
+        return _finish(_generate(
+            model=model, system=system, contents=contents, trace_id=trace_id,
+            uid_hash=uid_hash, fallback_text=fallback_text, want_json=want_json,
+            max_output_tokens=max_output_tokens, media=media), _s)
+
+
+def _finish(res: "GeminiResult", s) -> "GeminiResult":
+    try:
+        s.set_attribute("gemini.ok", res.ok)
+        s.set_attribute("gemini.fell_back", res.fell_back)
+        s.set_attribute("gemini.latency_ms", res.latency_ms)
+        s.set_attribute("gemini.out_tokens", res.out_tokens)
+    except Exception:  # noqa: BLE001
+        pass
+    telemetry.record_gemini(
+        model=res.model, ok=res.ok, latency_ms=res.latency_ms,
+        in_tokens=res.in_tokens, out_tokens=res.out_tokens,
+        cost_inr=res.est_inr, fell_back=res.fell_back)
+    return res
+
+
+def _generate(*, model, system, contents, trace_id, uid_hash, fallback_text,
+              want_json, max_output_tokens, media) -> GeminiResult:
     started = time.monotonic()
     tokens_out = max_output_tokens or MAX_OUTPUT_TOKENS
 
@@ -171,9 +199,10 @@ def generate(
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
             client = _get_client()
-            resp = client.models.generate_content(
-                model=model, contents=contents, config=cfg,
-            )
+            with telemetry.span("gemini.request", {"gemini.attempt": attempt}):
+                resp = client.models.generate_content(
+                    model=model, contents=contents, config=cfg,
+                )
             text = (resp.text or "").strip()
             if not text:
                 raise RuntimeError("empty response")

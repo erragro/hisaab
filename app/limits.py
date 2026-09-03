@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from google.cloud import firestore
 
+from app import telemetry
 from app.config import MONTHLY_COST_CEILING_INR, RATE_LIMIT_PER_DAY
 from app.firebase import db
 from app.logging_setup import log
@@ -72,17 +73,20 @@ def _daily_calls(uid: str) -> int:
 
 
 def precheck(uid: str) -> None:
-    if MONTHLY_COST_CEILING_INR > 0 and monthly_spent_inr() >= MONTHLY_COST_CEILING_INR:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            "The monthly usage budget for this service is used up. Your saved "
-            "cases, the deadline calculator, and template drafts still work.",
-        )
-    if _daily_calls(uid) >= RATE_LIMIT_PER_DAY:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            "Daily limit reached — the rest of the app still works.",
-        )
+    with telemetry.span("limits.precheck"):
+        if MONTHLY_COST_CEILING_INR > 0 and monthly_spent_inr() >= MONTHLY_COST_CEILING_INR:
+            telemetry.record_limit_reject("monthly_ceiling")
+            raise HTTPException(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                "The monthly usage budget for this service is used up. Your saved "
+                "cases, the deadline calculator, and template drafts still work.",
+            )
+        if _daily_calls(uid) >= RATE_LIMIT_PER_DAY:
+            telemetry.record_limit_reject("daily_cap")
+            raise HTTPException(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                "Daily limit reached — the rest of the app still works.",
+            )
 
 
 def record(uid: str, est_inr: float) -> None:

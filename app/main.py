@@ -32,7 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import limits, repo
+from app import limits, repo, telemetry
 from app.config import (
     EVIDENCE_MAX_BYTES,
     EVIDENCE_MAX_ITEMS,
@@ -97,7 +97,8 @@ def _lost_wages(case: dict, evidence: list[dict]) -> Optional[dict]:
         d = date.fromisoformat(raw) if raw else None
     except ValueError:
         d = None
-    lw = estimate_lost_wages(_earnings_samples(evidence), deactivated_on=d)
+    with telemetry.measure("lost_wages"):
+        lw = estimate_lost_wages(_earnings_samples(evidence), deactivated_on=d)
     return lw.to_dict() if lw else None
 
 
@@ -120,14 +121,16 @@ def _idem_key(request: Request) -> str | None:
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(app_: FastAPI):
     configure_logging()
+    otel = telemetry.init(app_)
     log.info("hisaab.boot", project=PROJECT_ID or "(none)",
-             frontend_origin=FRONTEND_ORIGIN)
+             frontend_origin=FRONTEND_ORIGIN, telemetry=otel)
     yield
 
 
 app = FastAPI(title="Hisaab", docs_url=None, redoc_url=None, lifespan=lifespan)
+telemetry.init(app)  # also instrument at import for TestClient / uvicorn --workers
 
 app.add_middleware(
     CORSMiddleware,
@@ -140,7 +143,8 @@ app.add_middleware(
 @app.middleware("http")
 async def trace(request: Request, call_next):
     request.state.trace_id = uuid.uuid4().hex[:12]
-    resp = await call_next(request)
+    with telemetry.inflight():
+        resp = await call_next(request)
     resp.headers["X-Trace-Id"] = request.state.trace_id
     return resp
 
@@ -368,7 +372,9 @@ def make_draft(case_id: str, body: DraftIn, request: Request,
     limits.record(uid, res.est_inr)
 
     # DETERMINISTIC: the model wrote the body; Python decides if it's ready.
-    readiness = check_readiness(body.kind, case_for_check, res.text).to_dict()
+    with telemetry.measure("readiness", {"kind": body.kind}):
+        readiness = check_readiness(body.kind, case_for_check, res.text).to_dict()
+    telemetry.record_readiness(body.kind, readiness["ready"], readiness["score"])
     stored = repo.add_draft(uid, case_id, body.kind, res.text, readiness)
     repo.audit("draft_created", uid)
     result = {"draft": stored, "readiness": readiness, "degraded": not res.ok}
@@ -389,15 +395,17 @@ def recompute_deadlines(case_id: str, body: PartyIn,
     def _d(v):
         return date.fromisoformat(v) if v else None
 
-    items = [d.to_dict() for d in build_case_deadlines(
-        incident_date=_d(case.get("incident_date")),
-        issue_type=case.get("issue_type"),
-        notice_sent=_d(body.notice_sent),
-        notice_days=body.notice_days,
-        grievance_filed=_d(body.grievance_filed),
-        platform_sla_days=body.platform_sla_days,
-        idrc_appeal_filed=_d(body.idrc_appeal_filed),
-    )]
+    with telemetry.measure("deadlines"):
+        deadlines = build_case_deadlines(
+            incident_date=_d(case.get("incident_date")),
+            issue_type=case.get("issue_type"),
+            notice_sent=_d(body.notice_sent),
+            notice_days=body.notice_days,
+            grievance_filed=_d(body.grievance_filed),
+            platform_sla_days=body.platform_sla_days,
+            idrc_appeal_filed=_d(body.idrc_appeal_filed),
+        )
+    items = [d.to_dict() for d in deadlines]
     repo.set_deadlines(uid, case_id, items)
     return {"deadlines": items}
 
@@ -438,11 +446,13 @@ def add_evidence(case_id: str, body: EvidenceIn, request: Request,
     limits.record(uid, res.est_inr)
     extracted = _clean_extracted(parse_json(res))
 
-    file_sha = evidence_chain.sha256_hex(raw)
-    captured_at = repo._now().isoformat()
-    prev = repo.last_evidence(uid, case_id)
-    chain = evidence_chain.link(prev, file_sha256=file_sha,
-                                captured_at=captured_at, kind=body.kind)
+    with telemetry.measure("evidence_chain", {"kind": body.kind, "bytes": len(raw)}):
+        file_sha = evidence_chain.sha256_hex(raw)
+        captured_at = repo._now().isoformat()
+        prev = repo.last_evidence(uid, case_id)
+        chain = evidence_chain.link(prev, file_sha256=file_sha,
+                                    captured_at=captured_at, kind=body.kind)
+    telemetry.record_evidence(body.kind, not res.ok)
 
     stored = repo.add_evidence(uid, case_id, {
         "kind": body.kind, "filename": body.filename[:200], "mime": body.mime,

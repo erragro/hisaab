@@ -1,0 +1,115 @@
+{
+  "title": "Hisaab — API & model",
+  "uid": "hisaab-main",
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "timeseries", "title": "Request rate by route (req/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{
+        "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count[1m]))",
+        "legendFormat": "{{http_route}}"
+      }]
+    },
+    {
+      "type": "timeseries", "title": "p95 latency by route",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket[2m])))",
+        "legendFormat": "{{http_route}}"
+      }]
+    },
+    {
+      "type": "timeseries", "title": "In-flight requests",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(hisaab_requests_inflight)", "legendFormat": "app inflight" },
+        { "expr": "sum(http_server_active_requests)", "legendFormat": "asgi active" }
+      ]
+    },
+    {
+      "type": "timeseries", "title": "HTTP status mix (req/s)",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
+      "targets": [{
+        "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count[1m]))",
+        "legendFormat": "{{http_response_status_code}}"
+      }]
+    },
+    {
+      "type": "timeseries", "title": "429s — burst limiter vs cost ceiling (/s)",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        { "expr": "sum by (bucket, window) (rate(hisaab_ratelimit_rejections_total[1m]))", "legendFormat": "burst {{bucket}}/{{window}}" },
+        { "expr": "sum by (reason) (rate(hisaab_limits_rejections_total[1m]))", "legendFormat": "limit {{reason}}" }
+      ]
+    },
+    {
+      "type": "timeseries", "title": "Gemini calls/s (by outcome)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "targets": [{
+        "expr": "sum by (model, ok, fell_back) (rate(hisaab_gemini_calls_total[1m]))",
+        "legendFormat": "{{model}} ok={{ok}} fb={{fell_back}}"
+      }]
+    },
+    {
+      "type": "timeseries", "title": "Gemini latency p50 / p95 / p99 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.5, sum by (le) (rate(hisaab_gemini_latency_milliseconds_bucket[2m])))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(hisaab_gemini_latency_milliseconds_bucket[2m])))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(hisaab_gemini_latency_milliseconds_bucket[2m])))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "type": "stat", "title": "Gemini spend this run (INR)",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 22 },
+      "fieldConfig": { "defaults": { "unit": "currencyINR", "decimals": 3 } },
+      "targets": [{ "expr": "sum(hisaab_gemini_cost_inr_total)" }]
+    },
+    {
+      "type": "stat", "title": "Tokens/s (in + out)",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 22 },
+      "targets": [{ "expr": "sum(rate(hisaab_gemini_tokens_total[1m]))" }]
+    },
+    {
+      "type": "gauge", "title": "Readiness pass rate",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 22 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } },
+      "targets": [{
+        "expr": "sum(rate(hisaab_readiness_checks_total{ready=\"true\"}[5m])) / clamp_min(sum(rate(hisaab_readiness_checks_total[5m])), 0.001)"
+      }]
+    },
+    {
+      "type": "timeseries", "title": "Deterministic core p95 by op",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 22 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum by (le, op) (rate(hisaab_deterministic_latency_milliseconds_bucket[2m])))",
+        "legendFormat": "{{op}}"
+      }]
+    },
+    {
+      "type": "timeseries", "title": "Evidence uploads/s",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 28 },
+      "targets": [{
+        "expr": "sum by (kind, degraded) (rate(hisaab_evidence_uploads_total[1m]))",
+        "legendFormat": "{{kind}} degraded={{degraded}}"
+      }]
+    },
+    {
+      "type": "timeseries", "title": "Readiness score distribution (avg by kind)",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 28 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } },
+      "targets": [{
+        "expr": "sum by (kind) (rate(hisaab_readiness_score_sum[5m])) / clamp_min(sum by (kind) (rate(hisaab_readiness_score_count[5m])), 0.001)",
+        "legendFormat": "{{kind}}"
+      }]
+    }
+  ]
+}

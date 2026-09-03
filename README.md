@@ -109,6 +109,7 @@ Cloud Run service — FastAPI (app/main.py)   [handlers are sync -> threadpool;
   │                    lostwages.py, evidence_chain.py (hash chain + signed manifest)
   ├─ app/limits.py     Firestore-backed daily cap + monthly cost ceiling (cross-instance)
   ├─ app/ratelimit.py  in-memory per-instance burst limit (backstop only)
+  ├─ app/telemetry.py  OpenTelemetry traces + metrics (no-op unless OTEL_* is set)
   └─ app/repo.py       every Firestore path; every method uid-scoped to /users/{uid}/...
         │
         ├── Cloud Firestore   per-user subcollections (cases, messages, drafts,
@@ -208,13 +209,50 @@ make run                     # terminal 2: the app on :8000
 make gate     # runs the full test suite + secret-scan; deploy depends on this
 ```
 
-The suite covers the pure core (`readiness`, `deadlines`, `redact`), the
-Gemini wrapper (retry/breaker/fallback), both rate-limit layers, and the
-API routes end to end (auth, uid-scoping, idempotency, validation, the
-cost ceiling) against an in-memory Firestore.
+The suite covers the pure core (`readiness`, `deadlines`, `lostwages`,
+`evidence_chain`, `redact`), the Gemini wrapper (retry/breaker/fallback),
+both rate-limit layers, and the API routes end to end (auth, uid-scoping,
+idempotency, validation, the cost ceiling) against an in-memory Firestore.
 
 `make deploy` runs `make gate` first and aborts on failure, then deploys
 in two phases (code, then pin `FRONTEND_ORIGIN` to the real service URL).
+
+---
+
+## Observability & load testing
+
+**OpenTelemetry** (`app/telemetry.py`) — a genuine no-op unless
+`HISAAB_OTEL=1` or an `OTEL_*` endpoint is set. When on it emits:
+
+- FastAPI request spans + `http.server.*` metrics (templated `http.route`)
+- a `gemini.generate` span per model call, with `hisaab.gemini.{calls,
+  latency,tokens,cost_inr}` metrics (model, ok, fell_back)
+- `core.*` spans + `hisaab.deterministic.latency` for readiness / deadlines
+  / lost-wages / the evidence hash-chain (the pure modules stay OTel-free;
+  they're timed from their call sites)
+- `hisaab.readiness.{checks,score}`, `hisaab.evidence.uploads`,
+  `hisaab.{ratelimit,limits}.rejections`, `hisaab.requests.inflight`
+
+In production, point `OTEL_EXPORTER_OTLP_ENDPOINT` at the Cloud Trace /
+Monitoring OTLP receiver — nothing else changes.
+
+**Local stack** — Jaeger + Prometheus + Grafana + an OTel Collector:
+
+```bash
+make otel-up        # http://localhost:16686 (traces) · :3001 (Grafana) · :9090 (Prom)
+make load           # runs the app with in-memory fakes + a Locust profile
+                    # (LOAD_USERS / LOAD_TIME / GEMINI_FAKE_LATENCY_MS override)
+make test-perf      # pytest concurrency assertions (excluded from `make gate`)
+make otel-down
+```
+
+`perf/serve_fake.py` runs the **real** app with Firebase/Gemini stubbed
+(the fake model *blocks* for `GEMINI_FAKE_LATENCY_MS`, like the SDK), so
+the load test measures the app's own overhead and threadpool behaviour.
+`tests/test_perf.py` asserts the properties the hardening pass claimed —
+deterministic endpoints stay ~5&nbsp;ms under 60-way concurrency, a slow
+model call never stalls the event loop, and the per-case lock rejects
+concurrent same-case chats without touching other cases.
 
 ## Deploy
 

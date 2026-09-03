@@ -17,6 +17,7 @@ from collections import defaultdict, deque
 
 from fastapi import HTTPException, status
 
+from app import telemetry
 from app.config import RATE_LIMIT_PER_5MIN, RATE_LIMIT_PER_DAY
 
 _events: dict[tuple[str, str], deque[float]] = defaultdict(deque)
@@ -60,9 +61,11 @@ def check(uid: str, *, bucket: str = "model") -> None:
         dq.popleft()
 
     if sum(1 for t in dq if now - t <= _WIN_5MIN) >= per_5min:
+        telemetry.record_ratelimit_reject(bucket, "5min")
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                             "Too many requests — try again in a few minutes.")
     if len(dq) >= per_day:
+        telemetry.record_ratelimit_reject(bucket, "day")
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                             "Daily limit reached — the rest of the app still works.")
     dq.append(now)
