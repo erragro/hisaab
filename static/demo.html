@@ -11,7 +11,7 @@
 <body>
 
 <div id="offlineBar" class="offline-bar" hidden></div>
-<div id="authStatus" class="auth-status" role="status">Checking your sign-in…</div>
+<div id="authStatus" class="auth-status" role="status" hidden>Checking your sign-in…</div>
 <main id="landing" hidden>
   <div class="brand" style="font-size:1.3rem">Hisaab <span class="dev">हिसाब</span></div>
   <h1 data-t="landing.h1">Your case, on one thread.</h1>
@@ -147,18 +147,75 @@ const C2 = {
 };
 
 const DB = { c1: C1, c2: C2 };
+let nextCase = 3;
+let nextEvidence = 4;
+let nextDraft = 2;
 
-window.__mockApi = async (path, { method } = {}) => {
+const demoNow = () => new Date().toISOString();
+const clone = (value) => structuredClone(value);
+const makeHash = (seed) => (seed + "0".repeat(64)).slice(0, 64);
+
+function demoReadiness() {
+  return {
+    kind: "platform_grievance", ready: true, score: 1,
+    required_passed: 4, required_total: 4, missing: [],
+    checks: [
+      { id: "worker_id", label: "Your partner / worker ID", ok: true, note: "" },
+      { id: "platform", label: "Which platform", ok: true, note: "" },
+      { id: "refs", label: "Order / trip IDs or the exact dates involved", ok: true, note: "" },
+      { id: "ask", label: "A clear ask (pay X / reactivate / explain the deduction)", ok: true, note: "" },
+    ],
+  };
+}
+
+window.__mockApi = async (path, { method = "GET", body = {} } = {}) => {
   await new Promise((r) => setTimeout(r, 120));
-  if (path === "/cases")
-    return { cases: [
-      { id: "c1", ...C1.case }, { id: "c2", ...C2.case },
-    ] };
+  if (path === "/cases" && method === "GET")
+    return { cases: Object.entries(DB).map(([id, data]) => ({ id, ...data.case })) };
+  if (path === "/cases" && method === "POST") {
+    const id = `c${nextCase++}`;
+    DB[id] = { case: { id, ...body, createdAt: demoNow(), summary: "New local test case." },
+      messages: [], drafts: [], evidence: [], deadlines: [], lost_wages: null };
+    return { id };
+  }
   let m;
-  if ((m = path.match(/^\/cases\/(c\d)$/))) return structuredClone(DB[m[1]]);
+  if ((m = path.match(/^\/cases\/(c\d)$/)) && method === "GET") return clone(DB[m[1]]);
   if ((m = path.match(/^\/cases\/(c\d)\/evidence\/(\w+)$/))) {
     const e = DB[m[1]].evidence.find((x) => x.id === m[2]);
     return { evidence: { ...e, data_b64: PNG } };
+  }
+  if ((m = path.match(/^\/cases\/(c\d)\/evidence$/)) && method === "POST") {
+    const data = DB[m[1]], previous = data.evidence.at(-1);
+    const id = `e${nextEvidence++}`;
+    const e = { id, seq: data.evidence.length + 1, kind: body.kind, filename: body.filename,
+      mime: body.mime, size: 68, sha256: makeHash(`sha${id}`), captured_at: demoNow(),
+      prev_hash: previous?.chain_hash || "GENESIS", chain_hash: makeHash(`chain${id}`),
+      extracted: { observed_date: body.captured_hint || null, amount_inr: null, period_days: null,
+        reason: "", refs: [], rating: "", summary: "Local test upload saved successfully." } };
+    data.evidence.push(e);
+    return { evidence: clone(e) };
+  }
+  if ((m = path.match(/^\/cases\/(c\d)\/chat$/)) && method === "POST") {
+    const data = DB[m[1]], ts = demoNow();
+    data.messages.push({ role: "user", text: body.message, ts });
+    const reply = "**Your message is saved.**\n\n1. Keep the screenshot or receipt.\n2. Follow the next deadline shown here.";
+    data.messages.push({ role: "model", text: reply, ts: demoNow() });
+    return { reply, degraded: false };
+  }
+  if ((m = path.match(/^\/cases\/(c\d)\/draft$/)) && method === "POST") {
+    const data = DB[m[1]], kind = body.kind || "platform_grievance", readiness = demoReadiness();
+    readiness.kind = kind;
+    const draft = { id: `d${nextDraft++}`, kind, createdAt: demoNow(), readiness,
+      body: `To: ${body.recipient_name}\n\nI, ${body.sender_name}, request help with my ${data.case.platform} dispute.\n\nPlease respond within 15 days.` };
+    data.drafts.push(draft);
+    return { draft: clone(draft), readiness: clone(readiness), degraded: false };
+  }
+  if ((m = path.match(/^\/cases\/(c\d)\/deadlines$/)) && method === "POST") {
+    const data = DB[m[1]];
+    data.deadlines = [{ kind: "platform_sla", label: "Platform reply deadline", due_date: "2026-10-01",
+      from_date: body.grievance_filed || "2026-09-01", basis: "Local test deadline update",
+      days_remaining: 26, working_days_remaining: null, passed: false }];
+    return { deadlines: clone(data.deadlines) };
   }
   if ((m = path.match(/^\/cases\/(c\d)\/appeal-record$/))) {
     const ev = DB[m[1]].evidence;
@@ -167,7 +224,7 @@ window.__mockApi = async (path, { method } = {}) => {
       verification: { ok: true, length: ev.length, broken_at: null, reason: "" },
       signature: { alg: "HMAC-SHA256", value: "3f9c...demo...a20b" } };
   }
-  if (method === "POST" || method === "DELETE") { return { ok: true, id: "new" }; }
+  if (method === "DELETE") return { ok: true };
   return {};
 };
 </script>
