@@ -11,7 +11,29 @@
 <body>
 
 <div id="offlineBar" class="offline-bar" hidden></div>
-<main id="landing" hidden></main>
+<div id="authStatus" class="auth-status" role="status">Checking your sign-in…</div>
+<main id="landing" hidden>
+  <div class="brand" style="font-size:1.3rem">Hisaab <span class="dev">हिसाब</span></div>
+  <h1 data-t="landing.h1">Your case, on one thread.</h1>
+  <p data-t="landing.p">A payment or deactivation dispute plays out over weeks. Hisaab keeps
+     the whole thing in one place — talk it through, save your proof, see exactly
+     what to do next and how long you have.</p>
+
+  <form id="phoneForm" class="auth-form" autocomplete="on">
+    <div class="phone-row">
+      <span class="cc">+91</span>
+      <input id="phoneInput" type="tel" inputmode="numeric" autocomplete="tel-national"
+             maxlength="10" required data-t-ph="auth.phone.ph" placeholder="Your mobile number">
+    </div>
+    <button id="sendCodeBtn" class="btn primary lg block" data-t="auth.phone.send">Send code</button>
+  </form>
+  <button id="googleBtn" class="btn ghost block" data-t="auth.google">Continue with Google</button>
+  <div id="recaptcha-container"></div>
+
+  <p class="trust"><span>🔒</span><span data-t="landing.trust">Private to you. Export or delete it any time.</span></p>
+  <p class="sub" style="margin-top:22px;font-size:.8rem" data-t="landing.disclaimer">
+     General information about process and drafting. Not legal advice.</p>
+</main>
 
 <div id="app" hidden>
   <header class="topbar">
@@ -39,7 +61,9 @@
 
 <script>
 /* ---- mock user + API so the UI renders with no backend ---- */
-window.__mockUser = { email: "demo@worker.in", uid: "demo" };
+window.__hisaabDemo = true;
+window.__mockUser = new URLSearchParams(location.search).get("demoSignedOut") === "1"
+  ? null : { email: "demo@worker.in", uid: "demo" };
 
 const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
@@ -50,7 +74,7 @@ const C1 = {
     summary: "ID deactivated on 28 Aug citing a customer complaint. No details given. Support chat got a template reply. Need to appeal to Uber's committee before the window closes." },
   messages: [
     { role: "user", text: "My Uber driver ID got blocked yesterday. It just says 'account under review'.", ts: "2026-08-29T09:05:00Z" },
-    { role: "model", text: "That is a deactivation. Under the Karnataka rules the platform must give you a reason and you can appeal to their Internal Dispute Resolution Committee. You have 7 working days from the block to file that appeal — so this is time-sensitive. First: do you have a screenshot of the block message and your last earnings screen?", ts: "2026-08-29T09:05:30Z" },
+    { role: "model", text: "**That is a deactivation.** Under the Karnataka rules the platform must give you a reason and you can appeal to their Internal Dispute Resolution Committee.\n\n1. Save a screenshot of the block message.\n2. Add your last earnings screen as proof.\n3. File the appeal within 7 working days.", ts: "2026-08-29T09:05:30Z" },
     { role: "user", text: "yes i took a photo of the message and my weekly earnings", ts: "2026-08-29T09:07:00Z" },
     { role: "model", text: "Good. Add both under 'Add proof' so they go into your record with a timestamp. Then use 'Make a document' → 'Complaint to the platform' and I will help you word the appeal.", ts: "2026-08-29T09:07:40Z" },
   ],

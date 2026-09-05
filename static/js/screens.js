@@ -1,5 +1,5 @@
 /* The two screens: Home (case list) and Case (the one-thread timeline). */
-import { $, el, pill, urgency, fmtDate, rupees } from "./ui.js";
+import { $, el, markdown, pill, urgency, fmtDate, rupees } from "./ui.js";
 import { t } from "./i18n.js";
 import { api } from "./api.js";
 import { openAction } from "./actions.js";
@@ -289,8 +289,12 @@ function tlItem(it) {
   if (it.expand) {
     let open = false;
     const box = el("div", { class: "tl-expand", hidden: true });
-    it.expand.forEach((m) => box.append(
-      el("div", { class: "msg " + (m.role === "user" ? "user" : "model"), text: m.text })));
+    it.expand.forEach((m) => {
+      const msg = el("div", { class: "msg " + (m.role === "user" ? "user" : "model") });
+      if (m.role === "user") msg.textContent = m.text;
+      else msg.append(markdown(m.text));
+      box.append(msg);
+    });
     const btn = el("button", { class: "tl-more", text: "▾ show",
       onclick: (e) => { e.stopPropagation(); open = !open; box.hidden = !open;
         btn.textContent = open ? "▴ hide" : "▾ show"; } });

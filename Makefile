@@ -70,9 +70,13 @@ load:
 # a git repo it falls back to a filtered recursive scan.
 secret-scan:
 	@echo "scanning committable files for key patterns…"
+	# Firebase Web API keys identify a project and are intentionally public; auth.js
+	# is the sole allowlisted browser configuration file.
 	@if git rev-parse --git-dir >/dev/null 2>&1 ; then \
 	  git ls-files -z --cached --others --exclude-standard \
 	    | xargs -0 grep -lIE 'AIza[0-9A-Za-z_-]{20,}' 2>/dev/null \
+	    | grep -vx 'static/js/auth.js' \
+	    | grep -q . \
 	    && { echo "FAIL: Google API key pattern in a committable file"; exit 1; } || true ; \
 	  git ls-files -z --cached --others --exclude-standard ':!.env.example' \
 	    | xargs -0 grep -lIE '(GEMINI_API_KEY|GOOGLE_API_KEY|api_key)[ ]*[:=][ ]*["'"'"'][^"'"'"']{20,}' 2>/dev/null \

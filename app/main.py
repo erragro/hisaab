@@ -179,15 +179,20 @@ def readyz():
     if _readyz_cache["body"] is not None and now - _readyz_cache["at"] < _READYZ_TTL_S:
         return JSONResponse(_readyz_cache["body"], status_code=_readyz_cache["code"])
 
-    checks = {"firestore": False, "secret_manager": False}
+    checks = {"firestore": False, "gemini": False}
     try:
         db().collection("_readyz").limit(1).get()
         checks["firestore"] = True
     except Exception:  # noqa: BLE001
         pass
     try:
-        from app.config import gemini_api_key
-        checks["secret_manager"] = bool(gemini_api_key())
+        from app.config import GEMINI_BACKEND, gemini_api_key
+        if GEMINI_BACKEND == "developer":
+            checks["gemini"] = bool(gemini_api_key())
+        else:
+            import google.auth
+            google.auth.default()  # resolves ADC without making a network call
+            checks["gemini"] = True
     except Exception:  # noqa: BLE001
         pass
     ok = all(checks.values())

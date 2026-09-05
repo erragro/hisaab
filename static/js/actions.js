@@ -1,5 +1,5 @@
 /* Bottom-sheet actions. Each is one task, one screen (SARAL G3/G7). */
-import { sheet, closeSheet, el, $, toast, rupees, fmtDate } from "./ui.js";
+import { sheet, closeSheet, el, $, markdown, toast, rupees, fmtDate } from "./ui.js";
 import { t } from "./i18n.js";
 import { api, newId, OfflineError, ApiError } from "./api.js";
 import { showHelp } from "./help.js";
@@ -116,12 +116,19 @@ function sheetEvidence() {
 }
 
 /* ---- chat --------------------------------------------------- */
+function chatMessage(role, text, degraded = false) {
+  const msg = el("div", { class: "msg " + (role === "user" ? "user" : "model") +
+    (degraded ? " degraded" : "") });
+  if (role === "user") msg.textContent = text;
+  else msg.append(markdown(text));
+  return msg;
+}
+
 function sheetChat() {
   const id = caseId();
   sheet(t("chat.title"), (body, close) => {
     const log = el("div", { class: "chat-log" });
-    for (const m of (ctx().messages || []))
-      log.append(el("div", { class: "msg " + (m.role === "user" ? "user" : "model"), text: m.text }));
+    for (const m of (ctx().messages || [])) log.append(chatMessage(m.role, m.text));
 
     const ta = el("textarea", { rows: 2, placeholder: t("chat.ph"), maxlength: 4000 });
     const mic = el("button", { class: "btn mic", type: "button", text: "🎤", "aria-label": t("chat.mic") });
@@ -133,16 +140,16 @@ function sheetChat() {
       e.preventDefault();
       const text = ta.value.trim(); if (!text) return;
       ta.value = ""; ta.disabled = send.disabled = true;
-      log.append(el("div", { class: "msg user", text }));
+      log.append(chatMessage("user", text));
       log.scrollTop = log.scrollHeight;
       try {
         const { reply, degraded } = await api(`/cases/${id}/chat`,
           { method: "POST", idempotencyKey: newId(), body: { message: text } });
-        log.append(el("div", { class: "msg model" + (degraded ? " degraded" : ""), text: reply }));
+        log.append(chatMessage("model", reply, degraded));
         reload();
       } catch (err) {
         if (err instanceof OfflineError) toast(t("err.offline_sent"));
-        else { toast(errMsg(err)); log.append(el("div", { class: "msg model degraded", text: errMsg(err) })); }
+        else { toast(errMsg(err)); log.append(chatMessage("model", errMsg(err), true)); }
       }
       ta.disabled = send.disabled = false; log.scrollTop = log.scrollHeight; ta.focus();
     };

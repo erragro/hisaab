@@ -107,6 +107,7 @@ label>input,label>select,label>textarea{margin-top:6px;font-weight:400}
 .screen{max-width:620px;margin:0 auto;padding:18px 16px 140px}
 .screen>h1{margin-bottom:4px}
 .sub{color:var(--ink-2);font-size:.96rem;margin-bottom:20px}
+.auth-status{max-width:560px;margin:0 auto;padding:28px 22px;color:var(--ink-2);text-align:center}
 
 /* ---------- landing (signed out) ---------- */
 #landing{max-width:560px;margin:0 auto;padding:44px 22px 80px;text-align:center}
@@ -213,6 +214,10 @@ label>input,label>select,label>textarea{margin-top:6px;font-weight:400}
 .msg.user{background:var(--brand);color:var(--brand-ink);justify-self:end;border-bottom-right-radius:5px}
 .msg.model{background:var(--surface-2);justify-self:start;border-bottom-left-radius:5px}
 .msg.degraded{border:1px solid var(--u-soon)}
+.msg p{margin:0}
+.msg p + p{margin-top:.6em}
+.msg ul,.msg ol{margin:.5em 0 .15em;padding-left:1.35em}
+.msg li + li{margin-top:.25em}
 
 /* ---------- record strip ---------- */
 .record{display:flex;align-items:center;gap:10px;flex-wrap:wrap;

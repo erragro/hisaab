@@ -25,6 +25,16 @@ load_dotenv()  # local only; no-op in prod where there is no .env
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
 FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://localhost:8000")
 
+# "vertex" (default): calls Vertex AI using the caller's ambient Application
+# Default Credentials — on Cloud Run that's the service's own IAM identity
+# (needs roles/aiplatform.user), no API key at all. Billed through the
+# project's normal Cloud Billing account.
+# "developer": the Gemini Developer API (api.generativelanguage) with an
+# API key from Secret Manager — billed through AI Studio's separate
+# prepayment-credits balance. Set GEMINI_BACKEND=developer to use it.
+GEMINI_BACKEND = os.environ.get("GEMINI_BACKEND", "vertex").strip().lower()
+GEMINI_VERTEX_LOCATION = os.environ.get("GEMINI_VERTEX_LOCATION", "global")
+
 # The "-latest" aliases always resolve to the current release, so these don't
 # break when a new Gemini flash version ships (as 2.5-flash did — it is no
 # longer available to new API-key users). Override per environment if needed.

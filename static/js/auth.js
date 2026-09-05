@@ -11,13 +11,21 @@
   credential. Fill it from Firebase console → Project settings.
 */
 const firebaseConfig = {
-  apiKey: "REPLACE_ME",
-  authDomain: "REPLACE_ME.firebaseapp.com",
-  projectId: "REPLACE_ME",
+  apiKey: "AIzaSyBnlCSYL8F_cqnz3vpJjibwagOJd92NJiQ",
+  authDomain: "gen-lang-client-0368265372.firebaseapp.com",
+  projectId: "gen-lang-client-0368265372",
 };
 
-// dev seam: /demo.html sets window.__mockUser to preview the UI without Firebase
+// dev seam: /demo.html explicitly enables mock auth, without Firebase or a
+// real phone number.
 const MU = () => (typeof window !== "undefined" ? window.__mockUser : null);
+const isDemo = () => (typeof window !== "undefined" && window.__hisaabDemo === true);
+const demoNavigate = (signedOut) => {
+  const next = new URL(location.href);
+  if (signedOut) next.searchParams.set("demoSignedOut", "1");
+  else next.searchParams.delete("demoSignedOut");
+  location.replace(next);
+};
 
 let _auth = null, _fb = null, _recaptcha = null;
 
@@ -52,19 +60,23 @@ export function resetVerifier() {
 
 /* ---- state ---- */
 export async function onUser(cb) {
-  if (MU()) { queueMicrotask(() => cb(MU())); return () => {}; }
+  if (isDemo()) { queueMicrotask(() => cb(MU())); return () => {}; }
   const m = await fb();
   return m.onAuthStateChanged(_auth, cb);
 }
-export function currentUser() { return MU() || (_auth && _auth.currentUser); }
+export function currentUser() { return isDemo() ? MU() : (_auth && _auth.currentUser); }
 export async function getToken() {
-  if (MU()) return "mock-token";
+  if (isDemo()) return "demo:token";
   await fb();
   if (!_auth.currentUser) throw new Error("not signed in");
   return _auth.currentUser.getIdToken();
 }
 export async function signOut() {
-  if (MU()) { window.__mockUser = null; location.reload(); return; }
+  if (isDemo()) {
+    window.__mockUser = null;
+    demoNavigate(true);
+    return;
+  }
   const m = await fb();
   return m.signOut(_auth);
 }
@@ -72,7 +84,10 @@ export async function signOut() {
 /* ---- phone (primary) ---- */
 // returns a confirmation object; caller collects the code and calls .confirm(code)
 export async function startPhoneSignIn(e164) {
-  if (MU()) return { confirm: async () => { window.__mockUser = { uid: "demo", phone: e164 }; location.reload(); } };
+  if (isDemo()) return { confirm: async () => {
+    window.__mockUser = { uid: "demo", phone: e164 };
+    demoNavigate(false);
+  } };
   const m = await fb();
   const v = await verifier();
   try {
@@ -85,7 +100,11 @@ export async function startPhoneSignIn(e164) {
 
 /* ---- google (secondary) ---- */
 export async function signInGoogle() {
-  if (MU()) { window.__mockUser = { uid: "demo", email: "demo@worker.in" }; location.reload(); return; }
+  if (isDemo()) {
+    window.__mockUser = { uid: "demo", email: "demo@worker.in" };
+    demoNavigate(false);
+    return;
+  }
   const m = await fb();
   return m.signInWithPopup(_auth, new m.GoogleAuthProvider());
 }

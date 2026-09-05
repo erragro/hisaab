@@ -9,6 +9,8 @@ import { showHelp } from "./help.js";
 
 const view = $("#view");
 let currentScreen = "home";
+let activeUid = null;
+let signingOut = false;
 
 /* ---- language + text size (persisted) ---------------------------- */
 setLang(getLang());
@@ -16,18 +18,66 @@ document.body.dataset.step = localStorage.getItem("hisaab.step") || "s";
 applyStatic();
 
 /* ---- auth gate -------------------------------------------------- */
-onUser((user) => {
+function resetSignedInView() {
+  window.__case = null;
+  view.replaceChildren();
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+}
+
+function setAuthStatus(text, show = true) {
+  const status = $("#authStatus");
+  if (!status) return;
+  status.textContent = text;
+  status.hidden = !show;
+}
+
+function applyAuthState(user) {
+  const previousUid = activeUid;
+  activeUid = user?.uid || null;
   const landing = $("#landing");
   if (landing) landing.hidden = !!user;
   $("#app").hidden = !user;
-  if (user) { route(); flushQueue(); }
+  setAuthStatus("", false);
+  if (user) {
+    route();
+    flushQueue();
+  } else if (previousUid) {
+    resetSignedInView();
+  }
+}
+
+Promise.resolve(onUser(applyAuthState)).catch(() => {
+  $("#landing").hidden = false;
+  $("#app").hidden = true;
+  setAuthStatus("", false);
+  toast("We couldn't check your sign-in. Refresh and try again.");
 });
+
+async function endSession(message = "") {
+  if (signingOut) return;
+  signingOut = true;
+  try {
+    resetSignedInView();
+    await signOut();
+    if (message) toast(message);
+  } catch {
+    toast("Couldn't sign out. Please try again.");
+  } finally {
+    signingOut = false;
+  }
+}
 
 const phoneForm = $("#phoneForm");
 if (phoneForm) phoneForm.addEventListener("submit", onSendCode);
 const googleBtn = $("#googleBtn");
-if (googleBtn) googleBtn.onclick = () =>
-  Promise.resolve(signInGoogle()).catch((e) => { const m = mapAuthErr(e); if (m) toast(m); });
+if (googleBtn) googleBtn.onclick = async () => {
+  if (googleBtn.disabled) return;
+  googleBtn.disabled = true;
+  googleBtn.textContent = "Opening Google…";
+  try { await signInGoogle(); }
+  catch (e) { const m = mapAuthErr(e); if (m) toast(m); }
+  finally { googleBtn.disabled = false; googleBtn.textContent = t("auth.google"); }
+};
 
 async function onSendCode(e) {
   e.preventDefault();
@@ -56,10 +106,10 @@ function openOtpSheet(e164, conf) {
       const code = otp.value.replace(/\D/g, "");
       if (code.length !== 6) { otp.focus(); return; }
       verify.disabled = true; verify.textContent = t("common.saving");
-      try { await conf.confirm(code); close(); }
-      catch {
+      try { await conf.confirm(code); verify.textContent = "Signing you in…"; close(); }
+      catch (err) {
         verify.disabled = false; verify.textContent = t("auth.otp.verify");
-        toast(t("auth.otp.wrong")); otp.select();
+        toast(mapOtpErr(err)); otp.select();
       }
     }
     verify.onclick = submit;
@@ -83,8 +133,22 @@ function mapAuthErr(err) {
   const c = (err && err.code) || "";
   if (c.includes("invalid-phone")) return t("auth.badphone");
   if (c.includes("too-many-requests")) return t("auth.toomany");
+  if (c.includes("quota-exceeded")) return "SMS limit reached. Please try again later.";
+  if (c.includes("billing-not-enabled")) return "Phone sign-in needs Firebase billing to send SMS.";
+  if (c.includes("captcha") || c.includes("app-credential"))
+    return "Phone verification security check failed. Refresh the page and try again.";
+  if (c.includes("operation-not-allowed")) return "Phone sign-in is not enabled in Firebase.";
+  if (c.includes("unauthorized-domain")) return "This website is not authorized for phone sign-in.";
   if (c.includes("popup-closed") || c.includes("cancelled-popup")) return "";
-  return t("auth.err");
+  return c ? `${t("auth.err")} (${c.replace(/^auth\//, "")})` : t("auth.err");
+}
+
+function mapOtpErr(err) {
+  const c = (err && err.code) || "";
+  if (c.includes("invalid-verification-code")) return t("auth.otp.wrong");
+  if (c.includes("code-expired") || c.includes("session-expired"))
+    return "This code has expired. Send a new code and try again.";
+  return c ? `Couldn't verify the code (${c.replace(/^auth\//, "")})` : t("auth.otp.wrong");
 }
 
 /* ---- routing (hash) ------------------------------------------- */
@@ -110,7 +174,7 @@ async function route(force) {
   } catch (e) {
     console.error("route failed", e);
     view.innerHTML = `<div class="screen"><p class="empty">${t("err.generic")}</p></div>`;
-    if (e?.status === 401) location.reload();
+    if (e?.status === 401) await endSession("Your sign-in expired. Please sign in again.");
   }
 }
 
@@ -155,7 +219,7 @@ function openMenu() {
     body.append(el("button", { class: "btn ghost block", text: t("menu.export"),
       style: "margin-bottom:10px", onclick: exportData }));
     body.append(el("button", { class: "btn ghost block", text: t("menu.signout"),
-      style: "margin-bottom:10px", onclick: () => signOut() }));
+      style: "margin-bottom:10px", onclick: async () => { close(); await endSession(); } }));
     body.append(el("button", { class: "btn danger block", text: t("menu.delete"),
       onclick: deleteAccount }));
   });
@@ -171,7 +235,7 @@ async function exportData() {
 }
 async function deleteAccount() {
   if (prompt(t("menu.delete.confirm")) !== "DELETE") return;
-  try { await api("/account", { method: "DELETE" }); await signOut(); toast("Account deleted."); }
+  try { await api("/account", { method: "DELETE" }); await endSession("Account deleted."); }
   catch (e) { toast(e.message); }
 }
 

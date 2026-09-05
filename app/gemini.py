@@ -29,7 +29,10 @@ from typing import Optional
 
 from app import telemetry
 from app.config import (
+    GEMINI_BACKEND,
+    GEMINI_VERTEX_LOCATION,
     MAX_OUTPUT_TOKENS,
+    PROJECT_ID,
     est_cost_inr,
     gemini_api_key,
     price_known,
@@ -55,10 +58,17 @@ def _get_client():
         from google import genai
         from google.genai import types
 
-        _client = genai.Client(
-            api_key=gemini_api_key(),
-            http_options=types.HttpOptions(timeout=_TIMEOUT_MS),
-        )
+        http_options = types.HttpOptions(timeout=_TIMEOUT_MS)
+        if GEMINI_BACKEND == "developer":
+            _client = genai.Client(api_key=gemini_api_key(), http_options=http_options)
+        else:
+            # Vertex AI: ambient Application Default Credentials — the
+            # Cloud Run service's own IAM identity, no API key. "global"
+            # has the fullest model garden; Vertex location is independent
+            # of the Cloud Run region.
+            _client = genai.Client(vertexai=True, project=PROJECT_ID,
+                                   location=GEMINI_VERTEX_LOCATION,
+                                   http_options=http_options)
     return _client
 
 

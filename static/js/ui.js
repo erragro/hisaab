@@ -20,6 +20,48 @@ export function el(tag, props = {}, kids = []) {
   return n;
 }
 
+/* Render the small, safe Markdown subset used in model replies. Never use
+   innerHTML for model/user content: replies are untrusted text. */
+export function markdown(text) {
+  const out = document.createDocumentFragment();
+  let list = null;
+
+  const inline = (target, value) => {
+    const re = /\*\*([^*\n]+)\*\*/g;
+    let at = 0, match;
+    while ((match = re.exec(value))) {
+      if (match.index > at) target.append(document.createTextNode(value.slice(at, match.index)));
+      target.append(el("strong", { text: match[1] }));
+      at = re.lastIndex;
+    }
+    if (at < value.length) target.append(document.createTextNode(value.slice(at)));
+  };
+
+  for (const line of String(text || "").replace(/\r/g, "").split("\n")) {
+    const ordered = line.match(/^(\d+)[.)]\s+(.+)$/);
+    const unordered = line.match(/^[-*+]\s+(.+)$/);
+    if (ordered || unordered) {
+      const tag = ordered ? "ol" : "ul";
+      if (!list || list.tagName.toLowerCase() !== tag) {
+        list = document.createElement(tag);
+        if (ordered && Number(ordered[1]) !== 1) list.start = Number(ordered[1]);
+        out.append(list);
+      }
+      const item = document.createElement("li");
+      inline(item, ordered ? ordered[2] : unordered[1]);
+      list.append(item);
+      continue;
+    }
+
+    list = null;
+    if (!line.trim()) continue;
+    const p = document.createElement("p");
+    inline(p, line);
+    out.append(p);
+  }
+  return out;
+}
+
 export function toast(msg) {
   const n = el("div", { class: "toast", text: msg });
   $("#toastRoot").append(n);
