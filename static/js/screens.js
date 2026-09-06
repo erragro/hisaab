@@ -1,8 +1,8 @@
 /* The two screens: Home (case list) and Case (the one-thread timeline). */
-import { $, el, markdown, pill, urgency, fmtDate, rupees } from "./ui.js";
-import { t } from "./i18n.js";
-import { api } from "./api.js";
-import { openAction } from "./actions.js";
+import { $, el, markdown, pill, urgency, fmtDate, rupees } from "./ui.js?v=20260906.3";
+import { t } from "./i18n.js?v=20260906.3";
+import { api } from "./api.js?v=20260906.3";
+import { openAction } from "./actions.js?v=20260906.3";
 
 /* ---------- deadline vocabulary (plain words first) ---------------- */
 const DL = {

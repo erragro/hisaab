@@ -1,11 +1,11 @@
 /* Bootstrap: auth, hash routing, topbar, FAB, offline bar, menu, PWA. */
-import { $, el, sheet, toast } from "./ui.js";
-import { t, setLang, getLang, applyStatic, LANGS } from "./i18n.js";
-import { onUser, signInGoogle, startPhoneSignIn, resetVerifier, signOut, currentUser } from "./auth.js";
-import { api, pendingCount, onSync, flushQueue } from "./api.js";
-import { renderHome, renderCase } from "./screens.js";
-import { openAction } from "./actions.js";
-import { showHelp } from "./help.js";
+import { $, el, sheet, toast } from "./ui.js?v=20260906.3";
+import { t, setLang, getLang, applyStatic, LANGS } from "./i18n.js?v=20260906.3";
+import { onUser, signInGoogle, startPhoneSignIn, resetVerifier, signOut, currentUser } from "./auth.js?v=20260906.3";
+import { api, pendingCount, onSync, flushQueue } from "./api.js?v=20260906.3";
+import { renderHome, renderCase } from "./screens.js?v=20260906.3";
+import { openAction } from "./actions.js?v=20260906.3";
+import { showHelp } from "./help.js?v=20260906.3";
 
 const view = $("#view");
 let currentScreen = "home";

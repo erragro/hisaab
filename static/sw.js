@@ -2,11 +2,12 @@
    Strategy: network-first for our own HTML/CSS/JS (so a deploy is picked up
    immediately and stale code never sticks), falling back to cache when the
    network is unavailable. Fonts: stale-while-revalidate. API: never touched. */
-const CACHE = "hisaab-v6";
+const CACHE = "hisaab-v7";
 const SHELL = [
   "/", "/index.html", "/app.css", "/manifest.webmanifest",
-  "/js/main.js", "/js/ui.js", "/js/i18n.js", "/js/api.js", "/js/auth.js",
-  "/js/screens.js", "/js/actions.js", "/js/help.js",
+  "/js/main.js?v=20260906.3", "/js/ui.js?v=20260906.3", "/js/i18n.js?v=20260906.3",
+  "/js/api.js?v=20260906.3", "/js/auth.js?v=20260906.3", "/js/screens.js?v=20260906.3",
+  "/js/actions.js?v=20260906.3", "/js/help.js?v=20260906.3",
 ];
 
 self.addEventListener("install", (e) => {

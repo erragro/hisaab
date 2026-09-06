@@ -3,8 +3,8 @@
   plus a small plain-word → legal-term glossary (G5: jargon stays out of the
   main UI and lives here instead).
 */
-import { sheet, el } from "./ui.js";
-import { getLang } from "./i18n.js";
+import { sheet, el } from "./ui.js?v=20260906.3";
+import { getLang } from "./i18n.js?v=20260906.3";
 
 const HELP = {
   home: {

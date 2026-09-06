@@ -1,5 +1,5 @@
 /* DOM helpers, bottom sheet, toast, urgency helpers. No framework. */
-import { t, applyStatic } from "./i18n.js";
+import { t, applyStatic } from "./i18n.js?v=20260906.3";
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];

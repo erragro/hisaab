@@ -6,7 +6,7 @@
    - Writes made while offline are queued in localStorage and flushed on
      reconnect (optimistic-UI support). Reads while offline just throw.
 */
-import { getToken } from "./auth.js";
+import { getToken } from "./auth.js?v=20260906.3";
 
 export const newId = () =>
   (crypto.randomUUID ? crypto.randomUUID()

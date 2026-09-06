@@ -1,8 +1,8 @@
 /* Bottom-sheet actions. Each is one task, one screen (SARAL G3/G7). */
-import { sheet, closeSheet, el, $, markdown, toast, rupees, fmtDate } from "./ui.js";
-import { t, getLang } from "./i18n.js";
-import { api, newId, OfflineError, ApiError } from "./api.js";
-import { showHelp } from "./help.js";
+import { sheet, closeSheet, el, $, markdown, toast, rupees, fmtDate } from "./ui.js?v=20260906.3";
+import { t, getLang } from "./i18n.js?v=20260906.3";
+import { api, newId, OfflineError, ApiError } from "./api.js?v=20260906.3";
+import { showHelp } from "./help.js?v=20260906.3";
 
 const caseId = () => (location.hash.match(/#\/case\/([^/]+)/) || [])[1];
 const ctx = () => window.__case || {};
