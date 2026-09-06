@@ -212,9 +212,10 @@ function openMenu() {
       (v) => {
         setLang(v);
         close();
-        // Reboot the current route so every dynamic label, sheet, and screen
-        // is rebuilt in the selected language, including on an older PWA tab.
-        window.location.reload();
+        // Rebuild the current view without reloading. Reloading loses the
+        // in-memory demo session and is unnecessary for Firebase sessions.
+        view.replaceChildren();
+        requestAnimationFrame(() => route(true));
       }));
     body.append(seg(t("menu.textsize"),
       [["s", t("menu.textsize.s")], ["m", t("menu.textsize.m")], ["l", t("menu.textsize.l")]],
