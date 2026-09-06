@@ -1,0 +1,2 @@
+/* Layout adjustment for the two public build links. */
+.build-note{grid-template-columns:.75fr 2fr auto auto}@media(max-width:820px){.build-note{grid-template-columns:1fr}}

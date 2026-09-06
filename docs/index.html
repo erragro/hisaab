@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="site.css">
   <link rel="stylesheet" href="build-story.css">
+  <link rel="stylesheet" href="build-story-overrides.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -129,16 +130,16 @@
       <div class="section-shell">
         <div class="section-label light reveal"><span>04</span><p>Build story</p></div>
         <div class="build-intro reveal">
-          <div><p class="eyebrow on-dark"><span class="pulse"></span> An honest production journey</p><h2>Started in AI Studio.<br><em>Finished for the real world.</em></h2></div>
-          <p>Hisaab began in Google AI Studio: the product direction, the secure-app directives, and the first working application were created there. Publishing exposed the difference between a compelling prototype and a dependable public service, so Codex was brought in to productionize the work.</p>
+          <div><p class="eyebrow on-dark"><span class="pulse"></span> An honest build record</p><h2>Started in AI Studio.<br><em>Operated on Cloud Run.</em></h2></div>
+          <p>Hisaab’s product direction, custom security instructions, and original interactive prototype were created in Google AI Studio. The public Hisaab service is a separately engineered Cloud Run application. This page distinguishes the prototype, its AI Studio credential, and the deployed production service rather than representing them as the same codebase.</p>
         </div>
         <div class="build-steps">
-          <article class="build-step reveal"><span>01</span><p class="build-label">GOOGLE AI STUDIO</p><h3>Security came first</h3><p>Custom instructions established the project’s non-negotiables: Firebase identity, server-side token verification, user-isolated data, Secret Manager, safe AI output, and tested deterministic decisions.</p></article>
-          <article class="build-step reveal"><span>02</span><p class="build-label">THE PUBLISHING TEST</p><h3>The prototype hit a real deployment problem</h3><p>The AI Studio export looked right in development but its published URL rendered blank. The issue showed why production needs a verified build, startup command, port binding, logs, and an end-to-end test—not only a preview.</p></article>
-          <article class="build-step reveal"><span>03</span><p class="build-label">CODEX + GITHUB</p><h3>Harden, test, and make it observable</h3><p>Codex was used to diagnose the deployment path, keep the project under version control, test critical flows, and retain the security boundaries needed for an authenticated application.</p></article>
-          <article class="build-step reveal"><span>04</span><p class="build-label">CLOUD RUN</p><h3>One public, production service</h3><p>The result is deployed on Cloud Run with Firebase Authentication, user-scoped Firestore storage, Gemini through a server backend, and server-only secrets.</p></article>
+          <article class="build-step reveal"><span>01</span><p class="build-label">GOOGLE AI STUDIO</p><h3>Security instructions set the foundation</h3><p>Custom instructions established the intended guardrails: Firebase identity, server-side verification, user isolation, Secret Manager, safe AI output, and deterministic decisions for high-impact calculations.</p></article>
+          <article class="build-step reveal"><span>02</span><p class="build-label">AI STUDIO PROTOTYPE</p><h3>The first Hisaab experience</h3><p>AI Studio produced the original Hisaab prototype and its case-journal experience. Its published URL is retained as a public prototype and as evidence of the AI Studio build process.</p></article>
+          <article class="build-step reveal"><span>03</span><p class="build-label">VERIFICATION</p><h3>Test the integration boundaries</h3><p>The exported prototype was reviewed separately from the deployed service. Its Gemini Developer API key was verified with a live model request before being placed server-side in the Cloud Run service.</p></article>
+          <article class="build-step reveal"><span>04</span><p class="build-label">CLOUD RUN</p><h3>A distinct, public production service</h3><p>The live service uses the public GitHub codebase: Firebase Authentication, server-scoped Firestore access, Gemini through a server backend, and keys injected from Secret Manager.</p></article>
         </div>
-        <div class="build-note reveal"><strong>What this demonstrates</strong><p>AI Studio accelerated the secure product foundation. The publishing setback became part of the engineering work: validate a generated app under real runtime conditions, then make it reliable before asking users to trust it with sensitive records.</p><a href="https://hisaab-651858445044.asia-south1.run.app" target="_blank" rel="noreferrer">Open the deployed Hisaab service <span>↗</span></a></div>
+        <div class="build-note reveal"><strong>What is live today</strong><p>A Gemini Developer API key created through AI Studio was tested and added to Cloud Run through Secret Manager. The exported AI Studio React/Express package has not been represented as the Cloud Run source; the production service is the separately maintained public repository.</p><a href="https://hisaab-gig-worker-case-journal.ai.studio/" target="_blank" rel="noreferrer">Open AI Studio prototype <span>↗</span></a><a href="https://hisaab-651858445044.asia-south1.run.app" target="_blank" rel="noreferrer">Open Cloud Run service <span>↗</span></a></div>
       </div>
     </section>
 
