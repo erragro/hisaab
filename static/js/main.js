@@ -209,7 +209,13 @@ function openMenu() {
     };
     body.append(seg(t("menu.language"),
       LANGS.map((l) => [l.code, l.label]), getLang(),
-      (v) => { setLang(v); close(); route(true); }));
+      (v) => {
+        setLang(v);
+        close();
+        // Reboot the current route so every dynamic label, sheet, and screen
+        // is rebuilt in the selected language, including on an older PWA tab.
+        window.location.reload();
+      }));
     body.append(seg(t("menu.textsize"),
       [["s", t("menu.textsize.s")], ["m", t("menu.textsize.m")], ["l", t("menu.textsize.l")]],
       document.body.dataset.step,
