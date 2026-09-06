@@ -27,7 +27,7 @@ of the work done in the engineering session that produced the current state:
 |---|---|
 | **Hardening pass** | ~29 findings from a critical review, all fixed; test suite 26 → 102 |
 | **Algorithmic Appeal Record** | New feature — hash-chained evidence locker, multimodal extraction, working-day IDRC deadlines, lost-wages estimate |
-| **Frontend rebuild** | Research-backed, timeline-centric, no-build PWA, English + Hindi |
+| **Frontend rebuild** | Research-backed, timeline-centric, no-build PWA, English + Hindi + Bengali |
 | **Authentication** | Phone-number OTP primary, Google secondary |
 | **Observability & load testing** | OpenTelemetry, a local Jaeger/Prometheus/Grafana stack, a Locust harness, concurrency tests |
 | **Deployment** | Live on Cloud Run in `asia-south1`, scale-to-zero, pending two manual setup steps |
@@ -471,7 +471,7 @@ plus access-to-justice legal-design research and offline-first patterns.
 | Colour-coded urgency as the primary cue (G4) | Red / amber / green (`urgency()`), working-day-aware, runs through pills, card borders, timeline nodes |
 | Keep jargon out of the UI (G5) | "Complaint to the platform", not "IDRC petition"; the legal term lives in the per-screen **Help** sheet's glossary |
 | Multiple input modes (G1) | Camera-first evidence capture; **voice input** for chat (Web Speech API, `hi-IN` / `kn-IN` / …) |
-| Culturally responsive, local language (G11) | ₹ everywhere; **English + Hindi** (full string tables); Noto Sans Devanagari; text-size toggle — all persisted |
+| Culturally responsive, local language (G11) | ₹ everywhere; **English + Hindi + Bengali** (full string tables); text-size toggle — all persisted |
 | Legal case = a chronology | The timeline **braids** the incident, every proof (+ what the model read off it), the conversation, drafts (+ readiness), and deadlines as future events |
 | Offline-first for weak connections | Service worker shell cache; offline writes queue (idempotency-keyed) and flush on reconnect; installable PWA |
 

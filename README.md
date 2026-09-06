@@ -104,7 +104,7 @@ Static PWA frontend — no build step (ES modules, one small CSS system,
   Timeline-centric: one
   scrolling "thread" per case with a pinned next-step card; a 3-action
   speed-dial is the whole in-case nav. Offline writes queue and sync.
-  English + Hindi, adjustable text size, per-screen help.
+  English + Hindi + Bengali, adjustable text size, per-screen help.
         │  Authorization: Bearer <Firebase ID token>
         ▼
 Cloud Run service — FastAPI (app/main.py)   [handlers are sync -> threadpool;
@@ -157,7 +157,7 @@ research:
   and every govt portal); "Continue with Google" is the one-tap fallback.
   The backend is identical either way — the uid comes from the verified
   token, and email is treated as best-effort (phone users have none).
-- **English + Hindi**, adjustable text size, both persisted.
+- **English + Hindi + Bengali**, adjustable text size, all persisted.
 - **Offline-first**: a service worker caches the shell; writes made offline
   queue in `localStorage` (idempotency-keyed) and flush on reconnect;
   installable as a PWA for a weak-connection phone.

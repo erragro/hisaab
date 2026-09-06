@@ -75,3 +75,15 @@ JSON object, no prose. Shape:
 Rules: transcribe only what is actually legible. Use "" or null for
 anything you cannot read. Do not infer today's date. Do not invent IDs.
 """
+
+
+_LANGUAGE_OUTPUT = {
+    "en": "Write the response in plain English.",
+    "hi": "Write the response in plain Hindi using Devanagari script. Keep names, IDs, dates, and amounts unchanged.",
+    "bn": "Write the response in plain Bengali using Bengali script. Keep names, IDs, dates, and amounts unchanged.",
+}
+
+
+def in_language(system: str, language: str) -> str:
+    """Append a user-selected output language without changing safety rules."""
+    return system + "\n\nOUTPUT LANGUAGE: " + _LANGUAGE_OUTPUT.get(language, _LANGUAGE_OUTPUT["en"])

@@ -51,7 +51,7 @@ from app.core.redact import safe_error, uid_hash
 from app.firebase import current_uid, db
 from app.gemini import generate, parse_json
 from app.logging_setup import configure_logging, log
-from app.prompts import CHAT_SYSTEM, DRAFT_SYSTEM, EVIDENCE_SYSTEM, EXTRACT_SYSTEM
+from app.prompts import CHAT_SYSTEM, DRAFT_SYSTEM, EVIDENCE_SYSTEM, EXTRACT_SYSTEM, in_language
 from app.ratelimit import check as rate_check
 from app.schemas import CaseCreate, ChatIn, DraftIn, EvidenceIn, PartyIn
 
@@ -285,7 +285,7 @@ def chat(case_id: str, body: ChatIn, request: Request,
                      "parts": [{"text": m["text"]}]} for m in history]
 
         res = generate(
-            model=GEMINI_MODEL_CHAT, system=CHAT_SYSTEM, contents=contents,
+            model=GEMINI_MODEL_CHAT, system=in_language(CHAT_SYSTEM, body.language), contents=contents,
             trace_id=trace_id, uid_hash=uh,
             fallback_text=("I couldn't reach the assistant just now. Your message is "
                            "saved. Try again in a minute — the rest of the app works."),
@@ -294,7 +294,7 @@ def chat(case_id: str, body: ChatIn, request: Request,
         repo.add_message(uid, case_id, "model", res.text)
 
         _auto_summarise(uid, case_id,
-                        history + [{"role": "model", "text": res.text}], trace_id, uh)
+                        history + [{"role": "model", "text": res.text}], trace_id, uh, body.language)
 
         result = {"reply": res.text, "degraded": not res.ok}
         if ik:
@@ -304,14 +304,14 @@ def chat(case_id: str, body: ChatIn, request: Request,
         lock.release()
 
 
-def _auto_summarise(uid, case_id, history, trace_id, uh):
+def _auto_summarise(uid, case_id, history, trace_id, uh, language="en"):
     """Model proposes a structured summary; code validates and stores it.
     On any failure the previous summary is kept — never corrupted."""
     history = _trim_history(history)
     contents = [{"role": "user", "parts": [{"text":
         "Conversation:\n" + "\n".join(
             f'{m["role"]}: {m["text"]}' for m in history)}]}]
-    res = generate(model=GEMINI_MODEL_UTILITY, system=EXTRACT_SYSTEM,
+    res = generate(model=GEMINI_MODEL_UTILITY, system=in_language(EXTRACT_SYSTEM, language),
                    contents=contents, trace_id=trace_id, uid_hash=uh,
                    fallback_text="{}", want_json=True, max_output_tokens=600)
     limits.record(uid, res.est_inr)
@@ -373,7 +373,7 @@ def make_draft(case_id: str, body: DraftIn, request: Request,
     contents = [{"role": "user", "parts": [{"text":
         "Draft this document. Case data:\n" + _json(payload)}]}]
 
-    res = generate(model=GEMINI_MODEL_CHAT, system=DRAFT_SYSTEM, contents=contents,
+    res = generate(model=GEMINI_MODEL_CHAT, system=in_language(DRAFT_SYSTEM, body.language), contents=contents,
                    trace_id=request.state.trace_id, uid_hash=uid_hash(uid),
                    fallback_text=_draft_template(body, case),
                    max_output_tokens=900)

@@ -1,15 +1,13 @@
 /*
   i18n — SARAL G11 (culturally responsive: local-language support).
-  English and Hindi are filled; the switcher lists the others so the
-  intent and the mechanism are visible. Unfilled keys fall back to English.
+  English, Hindi, and Bengali are intentionally supported end to end.
+  Other languages are not shown until their plain-language copy is reviewed.
   Strings are plain-word first; the legal term lives in help.js.
 */
 
 export const LANGS = [
   { code: "en", label: "English" },
   { code: "hi", label: "हिन्दी" },
-  { code: "kn", label: "ಕನ್ನಡ" },
-  { code: "ta", label: "தமிழ்" },
   { code: "bn", label: "বাংলা" },
 ];
 
@@ -264,6 +262,132 @@ const STR = {
     "err.generic": "कुछ ग़लत हुआ। फिर कोशिश करें।",
     "common.close": "बंद करें",
     "common.saving": "सहेजा जा रहा है…",
+  },
+
+  bn: {
+    "landing.h1": "আপনার মামলার সবকিছু, এক জায়গায়।",
+    "landing.p": "পেমেন্ট বা আইডি ব্লক হওয়ার বিরোধ কয়েক সপ্তাহ চলতে পারে। হিসাব সবকিছু এক জায়গায় রাখে: কথা বলুন, প্রমাণ রাখুন, তারপর কী করবেন এবং কত সময় আছে দেখুন।",
+    "landing.trust": "শুধু আপনার জন্য। যেকোনো সময় ডাউনলোড বা মুছে ফেলুন।",
+    "landing.disclaimer": "প্রক্রিয়া ও খসড়ার সাধারণ তথ্য। এটি আইনি পরামর্শ নয়।",
+
+    "auth.phone.ph": "আপনার মোবাইল নম্বর",
+    "auth.phone.send": "কোড পাঠান",
+    "auth.google": "Google দিয়ে চালিয়ে যান",
+    "auth.badphone": "আপনার ১০ সংখ্যার মোবাইল নম্বর দিন",
+    "auth.err": "কোড পাঠানো যায়নি। নম্বর দেখে আবার চেষ্টা করুন।",
+    "auth.toomany": "খুব বেশি চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।",
+    "auth.otp.title": "কোড লিখুন",
+    "auth.otp.sent": "আমরা SMS-এ ৬ সংখ্যার কোড পাঠিয়েছি",
+    "auth.otp.verify": "যাচাই করুন",
+    "auth.otp.resend": "আবার কোড পাঠান",
+    "auth.otp.change": "নম্বর বদলান",
+    "auth.otp.wrong": "কোডটি মেলেনি। আবার চেষ্টা করুন।",
+
+    "home.title": "আপনার মামলাগুলি",
+    "home.sub": "প্রতি বিরোধের জন্য একটি আলাদা রেকর্ড।",
+    "home.new": "＋ নতুন মামলা শুরু করুন",
+    "home.empty": "এখনও কোনো মামলা নেই। উপরে থেকে একটি শুরু করুন।",
+    "home.allclear": "এখন আপনার কিছু করার নেই।",
+
+    "fab.evidence": "প্রমাণ যোগ করুন",
+    "fab.chat": "প্রশ্ন করুন",
+    "fab.draft": "নথি তৈরি করুন",
+    "fab.deadlines": "তারিখ যোগ করুন",
+
+    "next.kicker": "আপনার পরের পদক্ষেপ",
+    "next.none": "আপনি ঠিক পথে আছেন",
+    "next.none.why": "এখন কিছু বাকি নেই। কিছু বদলালে প্রমাণ যোগ করুন বা প্রশ্ন করুন।",
+    "next.daysleft": "দিন বাকি",
+    "next.daysworking": "কর্মদিবস বাকি",
+    "next.overdue": "সময়সীমা পেরিয়ে গেছে",
+    "next.today": "আজই শেষ দিন",
+    "next.act": "এখনই এটি করুন",
+
+    "case.record": "প্রমাণ · রেকর্ড ঠিক আছে",
+    "case.record.broken": "রেকর্ড মিলছে না — এর উপর ভরসা করবেন না",
+    "case.talked": "আপনি এ বিষয়ে কথা বলেছেন",
+    "case.messages": "বার্তা",
+    "case.download": "আপিলের রেকর্ড ডাউনলোড করুন",
+    "case.lostwages": "আনুমানিক হারানো আয়",
+
+    "new.title": "মামলা শুরু করুন",
+    "new.sub": "শুধু মূল তথ্য দিন। বাকি কথা বলতে বলতে যোগ করতে পারবেন।",
+    "new.t": "ছোট শিরোনাম",
+    "new.t.ph": "যেমন: Zomato ₹2,400 আটকে রেখেছে — মার্চ",
+    "new.issue": "কী সমস্যা হয়েছে",
+    "new.platform": "কোন অ্যাপ / কোম্পানি",
+    "new.platform.ph": "Zomato, Uber, Urban Company…",
+    "new.amount": "জড়িত টাকার পরিমাণ (₹)",
+    "new.date": "কবে ঘটেছে",
+    "new.create": "মামলা তৈরি করুন",
+    "issue.unpaid_wages": "পেমেন্ট পাওয়া যায়নি",
+    "issue.wrong_deduction": "ভুল টাকা কাটা হয়েছে",
+    "issue.deactivation": "আইডি ব্লক / বন্ধ",
+    "issue.incentive_dispute": "ইনসেনটিভ পাওয়া যায়নি",
+    "issue.accident_claim": "দুর্ঘটনা / আঘাত",
+    "issue.other": "অন্য কিছু",
+
+    "ev.title": "প্রমাণ যোগ করুন",
+    "ev.sub": "অ্যাপের অ্যাক্সেস হারানোর আগে যা আছে তা রেখে দিন। স্ক্রিনশট, বার্তা, পে-স্লিপ।",
+    "ev.kind": "এটি কী",
+    "ev.date": "এতে থাকা তারিখ (যদি দেখা যায়)",
+    "ev.pick": "ছবি তুলুন বা ফাইল বাছুন",
+    "ev.hint": "ছবি, স্ক্রিনশট বা PDF · 900 KB-এর কম",
+    "ev.add": "রেকর্ডে যোগ করুন",
+    "ev.reading": "ফাইল পড়া হচ্ছে…",
+    "evk.deactivation_notice": "ব্লক / বন্ধ হওয়ার বার্তা",
+    "evk.earnings_screen": "অ্যাপের আয়ের স্ক্রিন",
+    "evk.ratings_screen": "রেটিং / কাজের ফলাফল",
+    "evk.support_chat": "সাপোর্টের সঙ্গে চ্যাট বা ইমেল",
+    "evk.payslip": "পে-স্লিপ / পেমেন্ট স্টেটমেন্ট",
+    "evk.other": "অন্য কিছু",
+
+    "chat.title": "বিষয়টি নিয়ে কথা বলুন",
+    "chat.sub": "কী হয়েছে বলুন, বা এরপর কী করবেন জিজ্ঞাসা করুন। একবারে এক ধাপ।",
+    "chat.ph": "এখানে লিখুন, বা বলার জন্য মাইক চাপুন",
+    "chat.send": "পাঠান",
+    "chat.mic": "বলুন",
+
+    "draft.title": "নথি তৈরি করুন",
+    "draft.sub": "হিসাব খসড়ার ভাষা লেখে। পাঠানোর আগে এটি সত্যিই প্রস্তুত কি না সেটাও দেখে।",
+    "draft.kind": "কোন নথি",
+    "draft.you": "আপনার নাম",
+    "draft.youraddr": "আপনার ঠিকানা",
+    "draft.workerid": "আপনার কর্মী / পার্টনার আইডি",
+    "draft.to": "কাকে পাঠাবেন (নাম)",
+    "draft.toaddr": "তাঁর ঠিকানা",
+    "draft.make": "খসড়া লিখুন",
+    "draft.copy": "লেখা কপি করুন",
+    "draft.ready": "পাঠানোর জন্য প্রস্তুত",
+    "draft.notready": "এখনও প্রস্তুত নয়",
+    "draft.missing": "এখনও বাকি",
+    "draft.checkspassed": "মোট {n}টি যাচাইয়ের মধ্যে উত্তীর্ণ",
+    "dk.legal_notice": "আইনি নোটিশ",
+    "dk.platform_grievance": "প্ল্যাটফর্মে অভিযোগ",
+    "dk.consumer_complaint": "ভোক্তা অভিযোগ",
+    "dk.labour_complaint": "শ্রম সংক্রান্ত অভিযোগ",
+
+    "dates.title": "তারিখ যোগ করুন",
+    "dates.sub": "হিসাব এই তথ্য থেকেই সময়সীমা বের করে। কখনও তারিখ আন্দাজ করে না।",
+    "dates.notice_sent": "নোটিশ পাঠানোর তারিখ",
+    "dates.notice_days": "আপনি কত দিন সময় দিয়েছেন",
+    "dates.grievance_filed": "প্ল্যাটফর্মে অভিযোগের তারিখ",
+    "dates.sla_days": "প্ল্যাটফর্ম কত দিনের প্রতিশ্রুতি দিয়েছে",
+    "dates.idrc_filed": "প্ল্যাটফর্মের কমিটিতে আপিলের তারিখ",
+    "dates.recompute": "সময়সীমা আপডেট করুন",
+
+    "menu.language": "ভাষা",
+    "menu.textsize": "লেখার আকার",
+    "menu.textsize.s": "সাধারণ", "menu.textsize.m": "বড়", "menu.textsize.l": "সবচেয়ে বড়",
+    "menu.export": "আমার তথ্য ডাউনলোড করুন",
+    "menu.delete": "আমার অ্যাকাউন্ট মুছুন",
+    "menu.signout": "সাইন আউট",
+    "menu.delete.confirm": "এটি আপনার অ্যাকাউন্ট এবং সব মামলা স্থায়ীভাবে মুছে দেবে। নিশ্চিত করতে DELETE লিখুন।",
+
+    "err.offline_sent": "সেভ করা হয়েছে। অনলাইনে এলে পাঠানো হবে।",
+    "err.generic": "কিছু ভুল হয়েছে। আবার চেষ্টা করুন।",
+    "common.close": "বন্ধ করুন",
+    "common.saving": "সেভ করা হচ্ছে…",
   },
 };
 

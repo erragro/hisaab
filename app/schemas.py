@@ -28,6 +28,7 @@ IssueType = Literal[
 DraftKind = Literal[
     "legal_notice", "platform_grievance", "consumer_complaint", "labour_complaint",
 ]
+Language = Literal["en", "hi", "bn"]
 
 SCHEMA_VERSION = 1
 
@@ -44,10 +45,12 @@ class CaseCreate(BaseModel):
 
 class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
+    language: Language = "en"
 
 
 class DraftIn(BaseModel):
     kind: DraftKind
+    language: Language = "en"
     sender_name: str = Field(min_length=1, max_length=120)
     sender_address: str = Field(default="", max_length=400)
     sender_worker_id: str = Field(default="", max_length=80)

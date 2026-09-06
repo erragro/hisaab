@@ -1,6 +1,9 @@
 # secrets — never commit
 .env
 .env.*
+# Local AI Studio download used for comparison; it can contain browser config
+# and a local Gemini key, so it must never be included in the repository.
+aistudio-export/
 !.env.example
 *.pem
 *-service-account*.json

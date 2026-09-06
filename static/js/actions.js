@@ -1,6 +1,6 @@
 /* Bottom-sheet actions. Each is one task, one screen (SARAL G3/G7). */
 import { sheet, closeSheet, el, $, markdown, toast, rupees, fmtDate } from "./ui.js";
-import { t } from "./i18n.js";
+import { t, getLang } from "./i18n.js";
 import { api, newId, OfflineError, ApiError } from "./api.js";
 import { showHelp } from "./help.js";
 
@@ -144,7 +144,7 @@ function sheetChat() {
       log.scrollTop = log.scrollHeight;
       try {
         const { reply, degraded } = await api(`/cases/${id}/chat`,
-          { method: "POST", idempotencyKey: newId(), body: { message: text } });
+          { method: "POST", idempotencyKey: newId(), body: { message: text, language: getLang() } });
         log.append(chatMessage("model", reply, degraded));
         reload();
       } catch (err) {
@@ -162,7 +162,7 @@ function wireMic(btn, ta) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { btn.hidden = true; return; }
   const rec = new SR();
-  rec.lang = { en: "en-IN", hi: "hi-IN", kn: "kn-IN", ta: "ta-IN", bn: "bn-IN" }[document.documentElement.lang] || "en-IN";
+  rec.lang = { en: "en-IN", hi: "hi-IN", bn: "bn-IN" }[document.documentElement.lang] || "en-IN";
   rec.interimResults = false;
   let on = false;
   btn.onclick = () => { on ? rec.stop() : rec.start(); };
@@ -210,7 +210,7 @@ function sheetDraft(preKind) {
           { method: "POST", idempotencyKey: newId(), body: {
             kind: kind.value, sender_name: you.value, sender_address: youAddr.value,
             sender_worker_id: workerId.value, recipient_name: to.value,
-            recipient_address: toAddr.value,
+            recipient_address: toAddr.value, language: getLang(),
           }});
         out.innerHTML = ""; out.append(draftView(draft, readiness, degraded));
         reload();
